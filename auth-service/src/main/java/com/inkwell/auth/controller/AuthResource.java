@@ -2,6 +2,7 @@ package com.inkwell.auth.controller;
 
 import com.inkwell.auth.dto.LoginRequest;
 import com.inkwell.auth.dto.RegisterRequest;
+import com.inkwell.auth.entity.User;
 import com.inkwell.auth.service.AuthServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -29,5 +30,11 @@ public class AuthResource {
             return ResponseEntity.status(401).body(response);
         }
         return ResponseEntity.ok(response);
+    }
+ // Endpoint to get user profile (Internal use or Profile page)
+    @GetMapping("/{id}")
+    public ResponseEntity<User> getUserProfile(@PathVariable Long id) {
+        User user = authService.getUserById(id);
+        return ResponseEntity.ok(user);
     }
 }

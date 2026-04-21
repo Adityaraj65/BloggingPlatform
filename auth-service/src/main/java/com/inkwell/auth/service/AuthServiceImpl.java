@@ -50,4 +50,9 @@ public class AuthServiceImpl {
             return "Error: Invalid credentials!";
         }
     }
+ // Method to fetch user details by ID
+    public User getUserById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+    }
 }
