@@ -1,40 +1,57 @@
 package com.inkwell.auth.controller;
 
-import com.inkwell.auth.dto.LoginRequest;
-import com.inkwell.auth.dto.RegisterRequest;
 import com.inkwell.auth.entity.User;
-import com.inkwell.auth.service.AuthServiceImpl;
+import com.inkwell.auth.dto.RegisterRequest;
+import com.inkwell.auth.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
 public class AuthResource {
 
     @Autowired
-    private AuthServiceImpl authService;
+    private AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody RegisterRequest request) {
-        String response = authService.register(request);
-        if (response.contains("Error")) {
-            return ResponseEntity.badRequest().body(response);
-        }
-        return ResponseEntity.ok(response);
+    public ResponseEntity<User> register(@RequestBody RegisterRequest request) {
+        return ResponseEntity.ok(authService.register(request));
     }
+
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest request) {
-        String response = authService.login(request);
-        if (response.contains("Error")) {
-            return ResponseEntity.status(401).body(response);
-        }
-        return ResponseEntity.ok(response);
+    public ResponseEntity<String> login(@RequestBody Map<String, String> loginData) {
+        String token = authService.login(loginData.get("username"), loginData.get("password"));
+        return ResponseEntity.ok(token);
     }
- // Endpoint to get user profile (Internal use or Profile page)
-    @GetMapping("/{id}")
-    public ResponseEntity<User> getUserProfile(@PathVariable Long id) {
-        User user = authService.getUserById(id);
-        return ResponseEntity.ok(user);
+
+    @GetMapping("/profile/{id}")
+    public ResponseEntity<User> getProfile(@PathVariable Long id) {
+        return ResponseEntity.ok(authService.getUserById(id));
+    }
+
+    @PutMapping("/profile/{id}")
+    public ResponseEntity<User> updateProfile(@PathVariable Long id, @RequestBody User user) {
+        return ResponseEntity.ok(authService.updateProfile(id, user));
+    }
+
+    @PutMapping("/password/{id}")
+    public ResponseEntity<String> changePassword(@PathVariable Long id, @RequestBody Map<String, String> data) {
+        authService.changePassword(id, data.get("newPassword"));
+        return ResponseEntity.ok("Password changed successfully");
+    }
+
+    @DeleteMapping("/deactivate/{id}")
+    public ResponseEntity<String> deactivate(@PathVariable Long id) {
+        authService.deactivateAccount(id);
+        return ResponseEntity.ok("Account deactivated");
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<User>> search(@RequestParam String query) {
+        return ResponseEntity.ok(authService.searchUsers(query));
     }
 }
