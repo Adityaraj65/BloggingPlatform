@@ -22,14 +22,15 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
     }
 
     public static class Config {}
-
     @Override
     public GatewayFilter apply(Config config) {
         return ((exchange, chain) -> {
             if (validator.isSecured.test(exchange.getRequest())) {
-                // Check if Header contains token
+                
+                // 1. Check if Header is missing
                 if (!exchange.getRequest().getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
-                    throw new RuntimeException("Missing Authorization Header");
+                    exchange.getResponse().setStatusCode(org.springframework.http.HttpStatus.UNAUTHORIZED);
+                    return exchange.getResponse().setComplete(); 
                 }
 
                 String authHeader = exchange.getRequest().getHeaders().get(HttpHeaders.AUTHORIZATION).get(0);
@@ -38,10 +39,11 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                 }
                 
                 try {
-                    // Validate Token
                     jwtUtil.validateToken(authHeader);
                 } catch (Exception e) {
-                    throw new RuntimeException("Unauthorized access to application");
+                
+                    exchange.getResponse().setStatusCode(org.springframework.http.HttpStatus.UNAUTHORIZED);
+                    return exchange.getResponse().setComplete();
                 }
             }
             return chain.filter(exchange);

@@ -22,14 +22,7 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateToken(String username) {
-        return Jwts.builder()
-                .setSubject(username)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 86400000)) // 24h
-                .signWith(getSignKey(), SignatureAlgorithm.HS256) // Use our shared key
-                .compact();
-    }
+    
 
     public void validateToken(final String token) {
         // In Gateway, we only need to parse it. If it doesn't throw an error, it's valid.
