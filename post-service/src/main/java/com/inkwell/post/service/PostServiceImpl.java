@@ -33,12 +33,44 @@ public class PostServiceImpl implements PostService {
         }
         post.setSlug(uniqueSlug);
         
-        post.setStatus("PENDING"); // New posts wait for approval or stay as DRAFT
+        post.setStatus("PENDING"); 
         post.setCreatedAt(LocalDateTime.now());
         post.setViewCount(0);
         post.setLikesCount(0);
         
         return mapToDTO(postRepository.save(post));
+    }
+
+    @Override
+    public PostResponseDTO getPostBySlug(String slug) {
+        Post post = postRepository.findBySlug(slug)
+                .orElseThrow(() -> new RuntimeException("Post not found with slug: " + slug));
+        
+        // Logic: Increment view count on every fetch by slug
+        post.setViewCount(post.getViewCount() + 1);
+        postRepository.save(post);
+        
+        return mapToDTO(post);
+    }
+
+    @Override
+    public PostResponseDTO getPostById(Long id) {
+        return mapToDTO(findEntityById(id));
+    }
+
+    @Override
+    public PostResponseDTO updatePost(Long id, PostRequestDTO dto) {
+        Post post = findEntityById(id);
+        post.setTitle(dto.getTitle());
+        post.setContent(dto.getContent());
+        // Status resets to PENDING for re-verification after update
+        post.setStatus("PENDING"); 
+        return mapToDTO(postRepository.save(post));
+    }
+
+    @Override
+    public void deletePost(Long id) {
+        postRepository.deleteById(id);
     }
 
     @Override
@@ -51,7 +83,6 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public void unpublishPost(Long id) {
-        // Business Rule: Hide post by moving it back to DRAFT
         Post post = findEntityById(id);
         post.setStatus("DRAFT");
         postRepository.save(post);
@@ -60,7 +91,21 @@ public class PostServiceImpl implements PostService {
     @Override
     public void approvePost(Long id) {
         Post post = findEntityById(id);
-        post.setStatus("APPROVED"); // Admin action
+        post.setStatus("APPROVED");
+        postRepository.save(post);
+    }
+
+    @Override
+    public void rejectPost(Long id) {
+        Post post = findEntityById(id);
+        post.setStatus("REJECTED");
+        postRepository.save(post);
+    }
+
+    @Override
+    public void likePost(Long id) {
+        Post post = findEntityById(id);
+        post.setLikesCount(post.getLikesCount() + 1);
         postRepository.save(post);
     }
 
@@ -74,15 +119,29 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    public void incrementViews(Long id) {
+        Post post = findEntityById(id);
+        post.setViewCount(post.getViewCount() + 1);
+        postRepository.save(post);
+    }
+
+    @Override
+    public List<PostResponseDTO> searchPosts(String query) {
+
+        return postRepository.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(query, query)
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<PostResponseDTO> getPostsByAuthor(Long authorId) {
-        // Business Rule: Author can see all their posts (Draft, Published, etc.)
         return postRepository.findByAuthorId(authorId).stream()
                 .map(this::mapToDTO).collect(Collectors.toList());
     }
 
     @Override
     public List<PostResponseDTO> getPublishedPosts() {
-        // Business Rule: Public feed only shows PUBLISHED status
         return postRepository.findByStatus("PUBLISHED").stream()
                 .map(this::mapToDTO).collect(Collectors.toList());
     }
@@ -92,31 +151,24 @@ public class PostServiceImpl implements PostService {
         return postRepository.findByAuthorId(authorId).size();
     }
 
-    // Helper to avoid repeating findById code
+    // Helper to find Entity
     private Post findEntityById(Long id) {
         return postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found with ID: " + id));
     }
 
+   
     private PostResponseDTO mapToDTO(Post post) {
         PostResponseDTO res = new PostResponseDTO();
         res.setPostId(post.getPostId());
         res.setTitle(post.getTitle());
+        res.setContent(post.getContent());
         res.setSlug(post.getSlug());
         res.setStatus(post.getStatus());
         res.setViewCount(post.getViewCount());
         res.setLikesCount(post.getLikesCount());
+        res.setCreatedAt(post.getCreatedAt());
         res.setPublishedAt(post.getPublishedAt());
         return res;
     }
-
-    // Unimplemented placeholders based on earlier sessions
-    @Override public PostResponseDTO updatePost(Long id, PostRequestDTO dto) { /* update logic */ return null; }
-    @Override public void deletePost(Long id) { postRepository.deleteById(id); }
-    @Override public PostResponseDTO getPostById(Long id) { return mapToDTO(findEntityById(id)); }
-    @Override public PostResponseDTO getPostBySlug(String slug) { /* fetch + incrementView */ return null; }
-    @Override public void likePost(Long id) { /* increment logic */ }
-    @Override public void incrementViews(Long id) { /* increment logic */ }
-    @Override public void rejectPost(Long id) { /* set status REJECTED */ }
-    @Override public List<PostResponseDTO> searchPosts(String query) { /* search logic */ return null; }
 }
