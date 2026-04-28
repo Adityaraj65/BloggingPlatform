@@ -1,4 +1,4 @@
-package com.inkwell.post;
+package com.inkwell.category;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -7,9 +7,11 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @SpringBootApplication
 @EnableDiscoveryClient
-@EnableFeignClients // Critical for service-to-service communication
-public class PostServiceApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(PostServiceApplication.class, args);
-    }
+@EnableFeignClients
+public class CategoryServiceApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(CategoryServiceApplication.class, args);
+	}
+
 }

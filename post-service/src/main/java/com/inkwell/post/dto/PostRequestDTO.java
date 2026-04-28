@@ -7,8 +7,15 @@ public class PostRequestDTO {
     private String featuredImageUrl;
     private Long authorId;
     private int readTimeMin;
+    private Long categoryId;
 
-    // Manual Getters and Setters
+    public Long getCategoryId() {
+		return categoryId;
+	}
+	public void setCategoryId(Long categoryId) {
+		this.categoryId = categoryId;
+	}
+	// Manual Getters and Setters
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
     public String getContent() { return content; }

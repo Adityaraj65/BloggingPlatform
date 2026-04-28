@@ -20,6 +20,10 @@ public class PostResource {
     public ResponseEntity<PostResponseDTO> create(@RequestBody PostRequestDTO dto) {
         return ResponseEntity.ok(postService.createPost(dto));
     }
+    @PostMapping("/add") 
+    public ResponseEntity<PostResponseDTO> createPost(@RequestBody PostRequestDTO dto) {
+        return ResponseEntity.ok(postService.createPost(dto));
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<PostResponseDTO> getById(@PathVariable Long id) {

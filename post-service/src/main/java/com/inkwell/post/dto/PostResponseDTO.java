@@ -22,10 +22,19 @@ public class PostResponseDTO {
     // 4. Timestamps (Critical for Figure 3)
     private LocalDateTime createdAt;
     private LocalDateTime publishedAt;
+    
+    
+    private Long categoryId;
 
     // --- GETTERS AND SETTERS ---
 
-    public Long getPostId() { return postId; }
+    public Long getCategoryId() {
+		return categoryId;
+	}
+	public void setCategoryId(Long categoryId) {
+		this.categoryId = categoryId;
+	}
+	public Long getPostId() { return postId; }
     public void setPostId(Long postId) { this.postId = postId; }
 
     public String getTitle() { return title; }

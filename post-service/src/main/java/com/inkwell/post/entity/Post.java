@@ -9,8 +9,15 @@ public class Post {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long postId; // Primary Key
+    private Long categoryId;
+    public Long getCategoryId() {
+		return categoryId;
+	}
 
-    private Long authorId; // Link to Auth-Service
+	public void setCategoryId(Long categoryId) {
+		this.categoryId = categoryId;
+	}
+	private Long authorId; // Link to Auth-Service
     private String title;
     private String slug; // URL friendly title (e.g., "my-first-blog")
     
