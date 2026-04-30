@@ -8,7 +8,22 @@ import java.time.LocalDateTime;
 @Table(name = "media")
 @Data
 public class Media {
-    public Long getMediaId() {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long mediaId;
+
+    private Long uploaderId;
+    private String filename;      // UUID based name
+    private String originalName;  
+    private String url;           // Serving URL
+    private String mimeType;      
+    private Long sizeKb;
+    private String altText;       
+    private Long linkedPostId;    
+    private LocalDateTime uploadedAt = LocalDateTime.now();
+    private boolean isDeleted = false;
+    public Media() {}
+	public Long getMediaId() {
 		return mediaId;
 	}
 	public void setMediaId(Long mediaId) {
@@ -74,18 +89,4 @@ public class Media {
 	public void setDeleted(boolean isDeleted) {
 		this.isDeleted = isDeleted;
 	}
-	@Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long mediaId;
-
-    private Long uploaderId;
-    private String filename;      // Unique name stored in folder
-    private String originalName;  // Original name for reference
-    private String url;           // Access URL
-    private String mimeType;      // image/png, image/jpeg, etc.
-    private Long sizeKb;
-    private String altText;
-    private Long linkedPostId;    // ID of the post this media belongs to
-    private LocalDateTime uploadedAt = LocalDateTime.now();
-    private boolean isDeleted = false; // Soft delete flag
 }
