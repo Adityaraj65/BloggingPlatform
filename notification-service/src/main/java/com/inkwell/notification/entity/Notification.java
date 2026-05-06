@@ -10,9 +10,11 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long notificationId;
 
+    @Column(nullable = false)
     private Long recipientId;
     private Long actorId;
-    private String type; // NEW_COMMENT, MENTION, etc.
+    @Column(nullable = false)
+    private String type;
     private String title;
     private String message;
     private Long relatedId;

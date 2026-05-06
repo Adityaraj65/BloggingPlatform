@@ -1,12 +1,15 @@
 package com.inkwell.notification.service;
 
 import com.inkwell.notification.entity.Notification;
+
 import com.inkwell.notification.repository.NotificationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -25,14 +28,19 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void sendBulk(List<Long> recipientIds, String title, String message) {
+
+        List<Notification> list = new ArrayList<>();
+
         for (Long id : recipientIds) {
             Notification n = new Notification();
             n.setRecipientId(id);
             n.setTitle(title);
             n.setMessage(message);
             n.setType("ADMIN_BROADCAST");
-            repository.save(n);
+            list.add(n);
         }
+
+        repository.saveAll(list); // optimized
     }
 
     @Override
@@ -75,11 +83,16 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void sendEmail(String to, String subject, String body) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(body);
-        emailSender.send(message);
+
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(to);
+            message.setSubject(subject);
+            message.setText(body);
+            emailSender.send(message);
+        } catch (Exception e) {
+            System.out.println("Email failed, but system continues");
+        }
     }
 
     @Override

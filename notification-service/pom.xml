@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.5.14</version> <!-- Fixed Version -->
+		<version>3.2.5</version> <!-- Fixed Stable Version -->
 		<relativePath/> 
 	</parent>
 	<groupId>com.inkwell</groupId>
@@ -15,10 +15,17 @@
 
 	<properties>
 		<java.version>17</java.version>
-		<spring-cloud.version>2023.0.0</spring-cloud.version> <!-- Required for Connectivity -->
+		<spring-cloud.version>2023.0.1</spring-cloud.version> <!-- Optimized for 3.2.5 -->
 	</properties>
 
 	<dependencies>
+		<!-- Swagger/OpenAPI for 3.2.5 -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>2.3.0</version>
+		</dependency>
+
 		<!-- Core Web & JPA -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -42,13 +49,13 @@
 			<scope>runtime</scope>
 		</dependency>
 
-		<!-- Connectivity: Eureka Client (To talk to other services) -->
+		<!-- Connectivity: Eureka Client -->
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
 		</dependency>
 
-		<!-- Connectivity: OpenFeign (For Inter-service API calls) -->
+		<!-- Connectivity: OpenFeign -->
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-openfeign</artifactId>
@@ -60,6 +67,32 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!-- ADD THESE inside <dependencies> -->
+
+<!-- SECURITY -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-security</artifactId>
+</dependency>
+
+<!-- JWT -->
+<dependency>
+    <groupId>io.jsonwebtoken</groupId>
+    <artifactId>jjwt-api</artifactId>
+    <version>0.11.5</version>
+</dependency>
+<dependency>
+    <groupId>io.jsonwebtoken</groupId>
+    <artifactId>jjwt-impl</artifactId>
+    <version>0.11.5</version>
+    <scope>runtime</scope>
+</dependency>
+<dependency>
+    <groupId>io.jsonwebtoken</groupId>
+    <artifactId>jjwt-jackson</artifactId>
+    <version>0.11.5</version>
+    <scope>runtime</scope>
+</dependency>
 	</dependencies>
 
 	<dependencyManagement>

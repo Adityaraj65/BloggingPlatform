@@ -5,7 +5,7 @@ import com.inkwell.category.entity.Category;
 import com.inkwell.category.entity.Tag;
 import com.inkwell.category.repository.CategoryRepository;
 import com.inkwell.category.repository.TagRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,98 +14,115 @@ import java.util.stream.Collectors;
 @Service
 public class CategoryServiceImpl implements CategoryService {
 
-    @Autowired
-    private CategoryRepository categoryRepository;
+    private final CategoryRepository categoryRepo;
+    private final TagRepository tagRepo;
 
-    @Autowired
-    private TagRepository tagRepository;
+    public CategoryServiceImpl(CategoryRepository categoryRepo, TagRepository tagRepo) {
+        this.categoryRepo = categoryRepo;
+        this.tagRepo = tagRepo;
+    }
 
-    // --- CATEGORY LOGIC ---
+    // -------- CATEGORY --------
 
     @Override
     public CategoryDTO createCategory(CategoryDTO dto) {
-        Category category = new Category();
-        category.setName(dto.getName());
-        category.setDescription(dto.getDescription());
-        category.setParentCategoryId(dto.getParentCategoryId());
-        
-        // Auto Slug Generation
-        category.setSlug(dto.getName().toLowerCase().trim().replaceAll("[^a-z0-9]", "-"));
-        
-        Category saved = categoryRepository.save(category);
-        return mapToCategoryDTO(saved);
+
+        if (categoryRepo.existsByName(dto.getName())) {
+            throw new RuntimeException("Category already exists");
+        }
+
+        Category c = new Category();
+        c.setName(dto.getName());
+        c.setDescription(dto.getDescription());
+        c.setParentCategoryId(dto.getParentCategoryId());
+
+        // slug generation
+        c.setSlug(generateSlug(dto.getName()));
+
+        return mapCategory(categoryRepo.save(c));
     }
 
     @Override
     public CategoryDTO getBySlug(String slug) {
-        Category cat = categoryRepository.findBySlug(slug)
+        Category c = categoryRepo.findBySlug(slug)
                 .orElseThrow(() -> new RuntimeException("Category not found"));
-        return mapToCategoryDTO(cat);
+        return mapCategory(c);
     }
 
     @Override
     public List<CategoryDTO> getAllCategories() {
-        return categoryRepository.findAll().stream()
-                .map(this::mapToCategoryDTO).collect(Collectors.toList());
+        return categoryRepo.findAll()
+                .stream()
+                .map(this::mapCategory)
+                .collect(Collectors.toList());
     }
 
     @Override
     public CategoryDTO updateCategory(Long id, CategoryDTO dto) {
-        Category cat = categoryRepository.findById(id)
+
+        Category c = categoryRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Category not found"));
-        cat.setName(dto.getName());
-        cat.setDescription(dto.getDescription());
-        return mapToCategoryDTO(categoryRepository.save(cat));
+
+        c.setName(dto.getName());
+        c.setDescription(dto.getDescription());
+
+        return mapCategory(categoryRepo.save(c));
     }
 
     @Override
     public void deleteCategory(Long id) {
-        categoryRepository.deleteById(id);
+        categoryRepo.deleteById(id);
     }
 
-    // --- TAG LOGIC ---
+    // -------- TAG --------
 
     @Override
     public Tag createTag(Tag tag) {
-        tag.setSlug(tag.getName().toLowerCase().trim().replaceAll("[^a-z0-9]", "-"));
-        return tagRepository.save(tag);
+
+        if (tagRepo.existsByName(tag.getName())) {
+            throw new RuntimeException("Tag already exists");
+        }
+
+        tag.setSlug(generateSlug(tag.getName()));
+        return tagRepo.save(tag);
     }
 
     @Override
     public Tag getTagBySlug(String slug) {
-        return tagRepository.findBySlug(slug)
+        return tagRepo.findBySlug(slug)
                 .orElseThrow(() -> new RuntimeException("Tag not found"));
     }
 
     @Override
     public List<Tag> getAllTags() {
-        return tagRepository.findAll();
+        return tagRepo.findAll();
     }
 
     @Override
     public List<Tag> getTrendingTags() {
-        return tagRepository.findTop10ByOrderByPostCountDesc();
+        return tagRepo.findTop10ByOrderByPostCountDesc();
     }
 
     @Override
     public void deleteTag(Long id) {
-        tagRepository.deleteById(id);
+        tagRepo.deleteById(id);
     }
 
-    // Association Placeholders (Will be expanded when linking with Post-Service)
-    @Override public void addTagToPost(Long pId, Long tId) {}
-    @Override public void removeTagFromPost(Long pId, Long tId) {}
+    // -------- HELPERS --------
 
-    // Helper Mapper
-    private CategoryDTO mapToCategoryDTO(Category cat) {
+    private String generateSlug(String name) {
+        return name.toLowerCase().trim().replaceAll("[^a-z0-9]", "-");
+    }
+
+    private CategoryDTO mapCategory(Category c) {
         CategoryDTO dto = new CategoryDTO();
-        dto.setCategoryId(cat.getCategoryId());
-        dto.setName(cat.getName());
-        dto.setSlug(cat.getSlug());
-        dto.setDescription(cat.getDescription());
-        dto.setParentCategoryId(cat.getParentCategoryId());
-        dto.setPostCount(cat.getPostCount());
-        dto.setCreatedAt(cat.getCreatedAt());
+        dto.setCategoryId(c.getCategoryId());
+        dto.setName(c.getName());
+        dto.setSlug(c.getSlug());
+        dto.setDescription(c.getDescription());
+        dto.setParentCategoryId(c.getParentCategoryId());
+        dto.setPostCount(c.getPostCount());
+        dto.setCreatedAt(c.getCreatedAt());
         return dto;
     }
 }

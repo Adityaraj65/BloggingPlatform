@@ -2,12 +2,18 @@ package com.inkwell.gateway.filter;
 
 import com.inkwell.gateway.config.RouteValidator;
 import com.inkwell.gateway.util.JwtUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.gateway.filter.GatewayFilter;
-import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
-import org.springframework.http.HttpHeaders;
-import org.springframework.stereotype.Component;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.gateway.filter.*;
+import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
+import org.springframework.http.*;
+import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerWebExchange;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+
+import reactor.core.publisher.Mono;
+
+// This filter runs for secured routes
 @Component
 public class AuthenticationFilter extends AbstractGatewayFilterFactory<AuthenticationFilter.Config> {
 
@@ -22,31 +28,59 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
     }
 
     public static class Config {}
+
     @Override
     public GatewayFilter apply(Config config) {
-        return ((exchange, chain) -> {
+
+        return (exchange, chain) -> {
+
+            // Check if endpoint is secured
             if (validator.isSecured.test(exchange.getRequest())) {
-                
-                // 1. Check if Header is missing
-                if (!exchange.getRequest().getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
-                    exchange.getResponse().setStatusCode(org.springframework.http.HttpStatus.UNAUTHORIZED);
-                    return exchange.getResponse().setComplete(); 
+
+                HttpHeaders headers = exchange.getRequest().getHeaders();
+
+                // Check Authorization header
+                if (!headers.containsKey(HttpHeaders.AUTHORIZATION)) {
+                    return onError(exchange, "Missing Authorization Header", HttpStatus.UNAUTHORIZED);
                 }
 
-                String authHeader = exchange.getRequest().getHeaders().get(HttpHeaders.AUTHORIZATION).get(0);
-                if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                    authHeader = authHeader.substring(7);
+                String token = headers.getFirst(HttpHeaders.AUTHORIZATION);
+
+                if (token != null && token.startsWith("Bearer ")) {
+                    token = token.substring(7);
                 }
-                
-                try {
-                    jwtUtil.validateToken(authHeader);
-                } catch (Exception e) {
-                
-                    exchange.getResponse().setStatusCode(org.springframework.http.HttpStatus.UNAUTHORIZED);
-                    return exchange.getResponse().setComplete();
+
+                // Validate token
+                if (!jwtUtil.validateToken(token)) {
+                    return onError(exchange, "Invalid Token", HttpStatus.UNAUTHORIZED);
                 }
+
+                // Extract username
+                String username = jwtUtil.extractUsername(token);
+
+                // Forward username to downstream services
+                ServerHttpRequest modifiedRequest = exchange.getRequest()
+                        .mutate()
+                        .header("X-auth-user", username)
+                        .build();
+
+                return chain.filter(exchange.mutate().request(modifiedRequest).build());
             }
+
             return chain.filter(exchange);
-        });
+        };
+    }
+
+    // Common error handler
+    private Mono<Void> onError(ServerWebExchange exchange, String err, HttpStatus status) {
+
+        exchange.getResponse().setStatusCode(status);
+
+        byte[] bytes = err.getBytes();
+
+        return exchange.getResponse()
+                .writeWith(Mono.just(exchange.getResponse()
+                        .bufferFactory()
+                        .wrap(bytes)));
     }
 }

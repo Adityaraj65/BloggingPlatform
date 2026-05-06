@@ -1,10 +1,10 @@
 package com.inkwell.post.service;
 
-import com.inkwell.post.dto.PostRequestDTO;
-import com.inkwell.post.dto.PostResponseDTO;
+import com.inkwell.post.client.CategoryClient;
+import com.inkwell.post.dto.*;
 import com.inkwell.post.entity.Post;
 import com.inkwell.post.repository.PostRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -14,161 +14,173 @@ import java.util.stream.Collectors;
 @Service
 public class PostServiceImpl implements PostService {
 
-    @Autowired
-    private PostRepository postRepository;
+    private final PostRepository repo;
+    private final CategoryClient categoryClient;
 
-    @Override
-    public PostResponseDTO createPost(PostRequestDTO dto) {
-        Post post = new Post();
-        post.setTitle(dto.getTitle());
-        post.setContent(dto.getContent());
-        post.setAuthorId(dto.getAuthorId());
-        
-        // Logic: Unique Slug Generation
-        String slug = dto.getTitle().toLowerCase().trim().replaceAll("[^a-z0-9]", "-");
-        String uniqueSlug = slug;
-        int count = 1;
-        while(postRepository.findBySlug(uniqueSlug).isPresent()) {
-            uniqueSlug = slug + "-" + count++;
-        }
-        post.setSlug(uniqueSlug);
-        
-        post.setStatus("PENDING"); 
-        post.setCreatedAt(LocalDateTime.now());
-        post.setViewCount(0);
-        post.setLikesCount(0);
-        
-        return mapToDTO(postRepository.save(post));
+    public PostServiceImpl(PostRepository repo, CategoryClient categoryClient) {
+        this.repo = repo;
+        this.categoryClient = categoryClient;
     }
 
+    // CREATE POST
     @Override
-    public PostResponseDTO getPostBySlug(String slug) {
-        Post post = postRepository.findBySlug(slug)
-                .orElseThrow(() -> new RuntimeException("Post not found with slug: " + slug));
-        
-        // Logic: Increment view count on every fetch by slug
-        post.setViewCount(post.getViewCount() + 1);
-        postRepository.save(post);
-        
-        return mapToDTO(post);
+    public PostResponseDTO createPost(PostRequestDTO dto) {
+
+        // Validate category using Feign client
+        if (dto.getCategoryId() != null) {
+            categoryClient.getCategoryById(dto.getCategoryId());
+        }
+
+        Post post = new Post();
+
+        post.setTitle(dto.getTitle());
+        post.setContent(dto.getContent());
+        post.setExcerpt(dto.getExcerpt());
+        post.setFeaturedImageUrl(dto.getFeaturedImageUrl());
+        post.setAuthorId(dto.getAuthorId());
+        post.setCategoryId(dto.getCategoryId());
+
+        // Generate slug
+        String baseSlug = dto.getTitle().toLowerCase().replaceAll("[^a-z0-9]", "-");
+        String slug = baseSlug;
+        int i = 1;
+
+        while (repo.findBySlug(slug).isPresent()) {
+            slug = baseSlug + "-" + i++;
+        }
+
+        post.setSlug(slug);
+
+        // Default status
+        post.setStatus("DRAFT");
+
+        // Calculate read time
+        int words = dto.getContent().split("\\s+").length;
+        post.setReadTimeMin(Math.max(1, words / 200));
+
+        return map(repo.save(post));
     }
 
     @Override
     public PostResponseDTO getPostById(Long id) {
-        return mapToDTO(findEntityById(id));
+        return map(find(id));
     }
 
     @Override
-    public PostResponseDTO updatePost(Long id, PostRequestDTO dto) {
-        Post post = findEntityById(id);
-        post.setTitle(dto.getTitle());
-        post.setContent(dto.getContent());
-        // Status resets to PENDING for re-verification after update
-        post.setStatus("PENDING"); 
-        return mapToDTO(postRepository.save(post));
-    }
+    public PostResponseDTO getPostBySlug(String slug) {
+        Post post = repo.findBySlug(slug)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
 
-    @Override
-    public void deletePost(Long id) {
-        postRepository.deleteById(id);
-    }
-
-    @Override
-    public void publishPost(Long id) {
-        Post post = findEntityById(id);
-        post.setStatus("PUBLISHED");
-        post.setPublishedAt(LocalDateTime.now());
-        postRepository.save(post);
-    }
-
-    @Override
-    public void unpublishPost(Long id) {
-        Post post = findEntityById(id);
-        post.setStatus("DRAFT");
-        postRepository.save(post);
-    }
-
-    @Override
-    public void approvePost(Long id) {
-        Post post = findEntityById(id);
-        post.setStatus("APPROVED");
-        postRepository.save(post);
-    }
-
-    @Override
-    public void rejectPost(Long id) {
-        Post post = findEntityById(id);
-        post.setStatus("REJECTED");
-        postRepository.save(post);
-    }
-
-    @Override
-    public void likePost(Long id) {
-        Post post = findEntityById(id);
-        post.setLikesCount(post.getLikesCount() + 1);
-        postRepository.save(post);
-    }
-
-    @Override
-    public void unlikePost(Long id) {
-        Post post = findEntityById(id);
-        if(post.getLikesCount() > 0) {
-            post.setLikesCount(post.getLikesCount() - 1);
-            postRepository.save(post);
-        }
-    }
-
-    @Override
-    public void incrementViews(Long id) {
-        Post post = findEntityById(id);
+        // Increment views
         post.setViewCount(post.getViewCount() + 1);
-        postRepository.save(post);
-    }
+        repo.save(post);
 
-    @Override
-    public List<PostResponseDTO> searchPosts(String query) {
-
-        return postRepository.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(query, query)
-                .stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
+        return map(post);
     }
 
     @Override
     public List<PostResponseDTO> getPostsByAuthor(Long authorId) {
-        return postRepository.findByAuthorId(authorId).stream()
-                .map(this::mapToDTO).collect(Collectors.toList());
+        return repo.findByAuthorId(authorId)
+                .stream().map(this::map).collect(Collectors.toList());
     }
 
     @Override
     public List<PostResponseDTO> getPublishedPosts() {
-        return postRepository.findByStatus("PUBLISHED").stream()
-                .map(this::mapToDTO).collect(Collectors.toList());
+        return repo.findByStatus("PUBLISHED")
+                .stream().map(this::map).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<PostResponseDTO> searchPosts(String query) {
+        return repo.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(query, query)
+                .stream().map(this::map).collect(Collectors.toList());
+    }
+
+    @Override
+    public PostResponseDTO updatePost(Long id, PostRequestDTO dto) {
+
+        Post post = find(id);
+
+        post.setTitle(dto.getTitle());
+        post.setContent(dto.getContent());
+        post.setExcerpt(dto.getExcerpt());
+        post.setUpdatedAt(LocalDateTime.now());
+
+        return map(repo.save(post));
+    }
+
+    @Override
+    public void publishPost(Long id) {
+        Post post = find(id);
+        post.setStatus("PUBLISHED");
+        post.setPublishedAt(LocalDateTime.now());
+        repo.save(post);
+    }
+
+    @Override
+    public void unpublishPost(Long id) {
+        Post post = find(id);
+        post.setStatus("UNPUBLISHED");
+        repo.save(post);
+    }
+
+    @Override
+    public void deletePost(Long id) {
+        repo.deleteById(id);
+    }
+
+    @Override
+    public void incrementViews(Long id) {
+        Post post = find(id);
+        post.setViewCount(post.getViewCount() + 1);
+        repo.save(post);
+    }
+
+    @Override
+    public void likePost(Long id) {
+        Post post = find(id);
+        post.setLikesCount(post.getLikesCount() + 1);
+        repo.save(post);
+    }
+
+    @Override
+    public void unlikePost(Long id) {
+        Post post = find(id);
+        if (post.getLikesCount() > 0) {
+            post.setLikesCount(post.getLikesCount() - 1);
+            repo.save(post);
+        }
     }
 
     @Override
     public int getPostCountByAuthor(Long authorId) {
-        return postRepository.findByAuthorId(authorId).size();
+        return repo.countByAuthorId(authorId);
     }
 
-    // Helper to find Entity
-    private Post findEntityById(Long id) {
-        return postRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Post not found with ID: " + id));
+    // helper
+    private Post find(Long id) {
+        return repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
     }
 
-   
-    private PostResponseDTO mapToDTO(Post post) {
-        PostResponseDTO res = new PostResponseDTO();
-        res.setPostId(post.getPostId());
-        res.setTitle(post.getTitle());
-        res.setContent(post.getContent());
-        res.setSlug(post.getSlug());
-        res.setStatus(post.getStatus());
-        res.setViewCount(post.getViewCount());
-        res.setLikesCount(post.getLikesCount());
-        res.setCreatedAt(post.getCreatedAt());
-        res.setPublishedAt(post.getPublishedAt());
-        return res;
+    // mapper
+    private PostResponseDTO map(Post p) {
+        PostResponseDTO dto = new PostResponseDTO();
+
+        dto.setPostId(p.getPostId());
+        dto.setTitle(p.getTitle());
+        dto.setSlug(p.getSlug());
+        dto.setContent(p.getContent());
+        dto.setExcerpt(p.getExcerpt());
+        dto.setFeaturedImageUrl(p.getFeaturedImageUrl());
+        dto.setStatus(p.getStatus());
+        dto.setViewCount(p.getViewCount());
+        dto.setLikesCount(p.getLikesCount());
+        dto.setReadTimeMin(p.getReadTimeMin());
+        dto.setCreatedAt(p.getCreatedAt());
+        dto.setPublishedAt(p.getPublishedAt());
+        dto.setCategoryId(p.getCategoryId());
+
+        return dto;
     }
 }

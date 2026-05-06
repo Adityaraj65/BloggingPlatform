@@ -1,32 +1,28 @@
 package com.inkwell.comment.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "comments")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class Comment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long commentId;
 
-    private Long postId;   // Linked to Post-Service
-    private Long authorId; // Linked to Auth-Service
+    private Long postId;
+    private Long authorId;
 
-    // Self-referencing: If this is a reply, store the ID of the parent comment
-    private Long parentCommentId; 
+    // null → top level comment
+    private Long parentCommentId;
 
     @Column(columnDefinition = "TEXT")
     private String content;
 
     private int likesCount = 0;
 
-    // Status: PENDING, APPROVED, REJECTED
+    // APPROVED / PENDING / REJECTED / DELETED
     private String status;
 
     private LocalDateTime createdAt;
@@ -85,4 +81,6 @@ public class Comment {
 	public void setUpdatedAt(LocalDateTime updatedAt) {
 		this.updatedAt = updatedAt;
 	}
+
+    // getters/setters
 }

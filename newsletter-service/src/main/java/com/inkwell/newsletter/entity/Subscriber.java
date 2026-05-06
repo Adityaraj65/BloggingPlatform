@@ -1,11 +1,9 @@
 package com.inkwell.newsletter.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
 import java.time.LocalDateTime;
 
 @Entity
-@Data
 public class Subscriber {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

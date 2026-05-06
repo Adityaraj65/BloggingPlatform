@@ -1,10 +1,10 @@
 package com.inkwell.comment.service;
 
-import com.inkwell.comment.dto.CommentRequestDTO;
-import com.inkwell.comment.dto.CommentResponseDTO;
+import com.inkwell.comment.client.PostClient;
+import com.inkwell.comment.dto.*;
 import com.inkwell.comment.entity.Comment;
 import com.inkwell.comment.repository.CommentRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -14,96 +14,111 @@ import java.util.stream.Collectors;
 @Service
 public class CommentServiceImpl implements CommentService {
 
-    @Autowired
-    private CommentRepository commentRepository;
+    private final CommentRepository repo;
+    private final PostClient postClient;
+
+    public CommentServiceImpl(CommentRepository repo, PostClient postClient) {
+        this.repo = repo;
+        this.postClient = postClient;
+    }
 
     @Override
     public CommentResponseDTO addComment(CommentRequestDTO dto) {
-        Comment comment = new Comment();
-        comment.setPostId(dto.getPostId());
-        comment.setAuthorId(dto.getAuthorId());
-        comment.setContent(dto.getContent());
-        comment.setParentCommentId(dto.getParentCommentId()); // Can be null if it's a main comment
 
-        // Logic: New comments are PENDING by default until Admin approves
-        comment.setStatus("PENDING");
-        comment.setCreatedAt(LocalDateTime.now());
-        comment.setLikesCount(0);
+        // Validate post exists (Feign call)
+        postClient.getPost(dto.getPostId());
 
-        // Logic: If it's a reply, verify if the parent comment exists
-        if (dto.getParentCommentId() != null) {
-            commentRepository.findById(dto.getParentCommentId())
-                .orElseThrow(() -> new RuntimeException("Parent comment not found!"));
-        }
+        Comment c = new Comment();
+        c.setPostId(dto.getPostId());
+        c.setAuthorId(dto.getAuthorId());
+        c.setParentCommentId(dto.getParentCommentId());
+        c.setContent(dto.getContent());
+        c.setStatus("PENDING");
+        c.setCreatedAt(LocalDateTime.now());
 
-        Comment savedComment = commentRepository.save(comment);
-        return mapToDTO(savedComment);
+        return map(repo.save(c));
     }
 
     @Override
     public List<CommentResponseDTO> getCommentsByPost(Long postId) {
-        // Business Rule: Fetch only Top-level comments (where parent is null)
-        return commentRepository.findByPostIdAndParentCommentIdIsNull(postId)
+        return repo.findByPostIdAndParentCommentIdIsNull(postId)
                 .stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
+                .map(c -> {
+                    CommentResponseDTO dto = map(c);
+                    dto.setReplies(getReplies(c.getCommentId()));
+                    return dto;
+                }).collect(Collectors.toList());
     }
 
     @Override
-    public List<CommentResponseDTO> getReplies(Long parentCommentId) {
-        // Business Rule: Fetch all children for a specific parent
-        return commentRepository.findByParentCommentId(parentCommentId)
-                .stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
+    public List<CommentResponseDTO> getReplies(Long parentId) {
+        return repo.findByParentCommentId(parentId)
+                .stream().map(this::map).collect(Collectors.toList());
     }
 
     @Override
-    public void approveComment(Long commentId) {
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
-        comment.setStatus("APPROVED");
-        commentRepository.save(comment);
+    public CommentResponseDTO updateComment(Long id, String content) {
+        Comment c = find(id);
+        c.setContent(content);
+        c.setUpdatedAt(LocalDateTime.now());
+        return map(repo.save(c));
     }
 
     @Override
-    public void likeComment(Long commentId) {
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
-        comment.setLikesCount(comment.getLikesCount() + 1);
-        commentRepository.save(comment);
+    public void deleteComment(Long id) {
+        Comment c = find(id);
+        c.setStatus("DELETED");
+        repo.save(c);
     }
 
     @Override
-    public void unlikeComment(Long commentId) {
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
-        if (comment.getLikesCount() > 0) {
-            comment.setLikesCount(comment.getLikesCount() - 1);
-            commentRepository.save(comment);
+    public void approveComment(Long id) {
+        Comment c = find(id);
+        c.setStatus("APPROVED");
+        repo.save(c);
+    }
+
+    @Override
+    public void rejectComment(Long id) {
+        Comment c = find(id);
+        c.setStatus("REJECTED");
+        repo.save(c);
+    }
+
+    @Override
+    public void likeComment(Long id) {
+        Comment c = find(id);
+        c.setLikesCount(c.getLikesCount() + 1);
+        repo.save(c);
+    }
+
+    @Override
+    public void unlikeComment(Long id) {
+        Comment c = find(id);
+        if (c.getLikesCount() > 0) {
+            c.setLikesCount(c.getLikesCount() - 1);
+            repo.save(c);
         }
     }
 
     @Override
     public int getCommentCount(Long postId) {
-        return commentRepository.countByPostId(postId);
+        return repo.countByPostId(postId);
     }
 
-    // Helper: Map Entity to DTO
-    private CommentResponseDTO mapToDTO(Comment comment) {
-        CommentResponseDTO res = new CommentResponseDTO();
-        res.setCommentId(comment.getCommentId());
-        res.setPostId(comment.getPostId());
-        res.setAuthorId(comment.getAuthorId());
-        res.setContent(comment.getContent());
-        res.setLikesCount(comment.getLikesCount());
-        res.setStatus(comment.getStatus());
-        res.setCreatedAt(comment.getCreatedAt());
-        return res;
+    private Comment find(Long id) {
+        return repo.findById(id).orElseThrow(() -> new RuntimeException("Comment not found"));
     }
 
-    // Standard CRUD Placeholders
-    @Override public void deleteComment(Long commentId) { commentRepository.deleteById(commentId); }
-    @Override public void rejectComment(Long commentId) { /* set status REJECTED */ }
-    @Override public CommentResponseDTO updateComment(Long commentId, String newContent) { /* update logic */ return null; }
+    private CommentResponseDTO map(Comment c) {
+        CommentResponseDTO dto = new CommentResponseDTO();
+        dto.setCommentId(c.getCommentId());
+        dto.setPostId(c.getPostId());
+        dto.setAuthorId(c.getAuthorId());
+        dto.setContent(c.getContent());
+        dto.setLikesCount(c.getLikesCount());
+        dto.setStatus(c.getStatus());
+        dto.setCreatedAt(c.getCreatedAt());
+        return dto;
+    }
 }

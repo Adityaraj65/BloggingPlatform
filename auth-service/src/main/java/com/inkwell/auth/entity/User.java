@@ -9,7 +9,7 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long userId; // Matches 'userId:int' in diagram
+    private Long userId;
 
     @Column(unique = true, nullable = false)
     private String username;
@@ -17,23 +17,28 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
 
+    // Store encrypted password
     @Column(nullable = false)
-    private String password; // This stores the passwordHash
+    private String passwordHash;
 
     private String fullName;
-    private String role; // READER, AUTHOR, ADMIN
+
+    // Role stored as ENUM (safe and controlled)
+    @Enumerated(EnumType.STRING)
+    private Role role;
+
     private String bio;
     private String avatarUrl;
-    private String provider = "LOCAL"; // Default is LOCAL
+
+    // LOCAL / GOOGLE / GITHUB
+    private String provider = "LOCAL";
+
     private boolean isActive = true;
+
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    // Default Constructor
-    public User() {}
-
-    // GETTERS AND SETTERS
+    // Getters and Setters
     public Long getUserId() { return userId; }
-    public void setUserId(Long userId) { this.userId = userId; }
 
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
@@ -41,14 +46,14 @@ public class User {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
+    public String getPasswordHash() { return passwordHash; }
+    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
 
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
 
-    public String getRole() { return role; }
-    public void setRole(String role) { this.role = role; }
+    public Role getRole() { return role; }
+    public void setRole(Role role) { this.role = role; }
 
     public String getBio() { return bio; }
     public void setBio(String bio) { this.bio = bio; }
@@ -56,12 +61,6 @@ public class User {
     public String getAvatarUrl() { return avatarUrl; }
     public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
 
-    public String getProvider() { return provider; }
-    public void setProvider(String provider) { this.provider = provider; }
-
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

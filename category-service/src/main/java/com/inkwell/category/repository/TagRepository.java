@@ -2,19 +2,15 @@ package com.inkwell.category.repository;
 
 import com.inkwell.category.entity.Tag;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
-import java.util.List;
-import java.util.Optional;
 
-@Repository
+import java.util.Optional;
+import java.util.List;
+
 public interface TagRepository extends JpaRepository<Tag, Long> {
-    
+
     Optional<Tag> findBySlug(String slug);
 
-    // Logic: Trending tags (Top tags by usage count)
-    List<Tag> findTop10ByOrderByPostCountDesc();
+    boolean existsByName(String name);
 
-    // Mapping logic (Simplified for now, will link to posts via a junction table if needed)
-    // List<Tag> findByPostId(Long postId); 
+    List<Tag> findTop10ByOrderByPostCountDesc();
 }

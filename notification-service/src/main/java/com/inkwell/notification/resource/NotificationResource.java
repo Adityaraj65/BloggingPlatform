@@ -2,17 +2,22 @@ package com.inkwell.notification.resource;
 
 import com.inkwell.notification.entity.Notification;
 import com.inkwell.notification.service.NotificationService;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
 @RequestMapping("/notifications")
 public class NotificationResource {
 
-    @Autowired
-    private NotificationService notifService;
+    private final NotificationService notifService;
+
+    public NotificationResource(NotificationService notifService) {
+        this.notifService = notifService;
+    }
 
     @GetMapping("/recipient/{id}")
     public ResponseEntity<List<Notification>> getByRecipient(@PathVariable Long id) {
@@ -30,8 +35,12 @@ public class NotificationResource {
         return ResponseEntity.ok(notifService.getUnreadCount(id));
     }
 
+    // ADMIN ONLY
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/send-bulk")
-    public ResponseEntity<Void> sendBulk(@RequestBody List<Long> ids, @RequestParam String title, @RequestParam String msg) {
+    public ResponseEntity<Void> sendBulk(@RequestBody List<Long> ids,
+                                         @RequestParam String title,
+                                         @RequestParam String msg) {
         notifService.sendBulk(ids, title, msg);
         return ResponseEntity.ok().build();
     }

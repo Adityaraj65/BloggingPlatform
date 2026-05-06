@@ -1,8 +1,5 @@
 package com.inkwell.post.dto;
 
-import lombok.Data;
-
-
 public class CategoryDTO {
     private Long categoryId;
     private String name;

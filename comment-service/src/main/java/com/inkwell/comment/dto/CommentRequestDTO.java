@@ -1,21 +1,53 @@
 package com.inkwell.comment.dto;
 
+import jakarta.validation.constraints.*;
+
 public class CommentRequestDTO {
+
+    @NotNull
     private Long postId;
+
+    @NotNull
     private Long authorId;
-    private Long parentCommentId; // Null if it's a new main comment
+
+    private Long parentCommentId;
+
+    @NotBlank
     private String content;
 
-    // --- Getters and Setters ---
-    public Long getPostId() { return postId; }
-    public void setPostId(Long postId) { this.postId = postId; }
+    // getters/setters
+    
+	public Long getPostId() {
+		return postId;
+	}
 
-    public Long getAuthorId() { return authorId; }
-    public void setAuthorId(Long authorId) { this.authorId = authorId; }
+	public void setPostId(Long postId) {
+		this.postId = postId;
+	}
 
-    public Long getParentCommentId() { return parentCommentId; }
-    public void setParentCommentId(Long parentCommentId) { this.parentCommentId = parentCommentId; }
+	public Long getAuthorId() {
+		return authorId;
+	}
 
-    public String getContent() { return content; }
-    public void setContent(String content) { this.content = content; }
+	public void setAuthorId(Long authorId) {
+		this.authorId = authorId;
+	}
+
+	public Long getParentCommentId() {
+		return parentCommentId;
+	}
+
+	public void setParentCommentId(Long parentCommentId) {
+		this.parentCommentId = parentCommentId;
+	}
+
+	public String getContent() {
+		return content;
+	}
+
+	public void setContent(String content) {
+		this.content = content;
+	}
+
+   
 }

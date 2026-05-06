@@ -1,9 +1,7 @@
 package com.inkwell.newsletter.dto;
 
-import lombok.Data;
 import java.time.LocalDateTime;
 
-@Data
 public class SubscriberDTO {
     private Long subscriberId;
     private String email;

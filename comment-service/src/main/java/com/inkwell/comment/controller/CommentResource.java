@@ -1,10 +1,12 @@
 package com.inkwell.comment.controller;
 
-import com.inkwell.comment.dto.CommentRequestDTO;
-import com.inkwell.comment.dto.CommentResponseDTO;
+import com.inkwell.comment.dto.*;
 import com.inkwell.comment.service.CommentService;
-import org.springframework.beans.factory.annotation.Autowired;
+
+import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -13,51 +15,67 @@ import java.util.List;
 @RequestMapping("/comments")
 public class CommentResource {
 
-    @Autowired
-    private CommentService commentService;
+    private final CommentService service;
 
-    // 1. Add a new comment or reply
-    @PostMapping("/add")
-    public ResponseEntity<CommentResponseDTO> addComment(@RequestBody CommentRequestDTO dto) {
-        return ResponseEntity.ok(commentService.addComment(dto));
+    public CommentResource(CommentService service) {
+        this.service = service;
     }
 
-    // 2. Get all top-level comments for a post
+    @PostMapping
+    public ResponseEntity<CommentResponseDTO> add(@Valid @RequestBody CommentRequestDTO dto) {
+        return ResponseEntity.ok(service.addComment(dto));
+    }
+
     @GetMapping("/post/{postId}")
-    public ResponseEntity<List<CommentResponseDTO>> getByPost(@PathVariable Long postId) {
-        return ResponseEntity.ok(commentService.getCommentsByPost(postId));
+    public ResponseEntity<List<CommentResponseDTO>> get(@PathVariable Long postId) {
+        return ResponseEntity.ok(service.getCommentsByPost(postId));
     }
 
-    // 3. Get replies for a specific comment
-    @GetMapping("/replies/{commentId}")
-    public ResponseEntity<List<CommentResponseDTO>> getReplies(@PathVariable Long commentId) {
-        return ResponseEntity.ok(commentService.getReplies(commentId));
+    @GetMapping("/replies/{id}")
+    public ResponseEntity<List<CommentResponseDTO>> replies(@PathVariable Long id) {
+        return ResponseEntity.ok(service.getReplies(id));
     }
 
-    // 4. Admin: Approve a comment
-    @PutMapping("/approve/{commentId}")
-    public ResponseEntity<String> approve(@PathVariable Long commentId) {
-        commentService.approveComment(commentId);
-        return ResponseEntity.ok("Comment approved successfully!");
+    @PutMapping("/{id}")
+    public ResponseEntity<CommentResponseDTO> update(@PathVariable Long id,
+                                                     @RequestParam String content) {
+        return ResponseEntity.ok(service.updateComment(id, content));
     }
 
-    // 5. Social: Like a comment
-    @PutMapping("/like/{commentId}")
-    public ResponseEntity<Void> like(@PathVariable Long commentId) {
-        commentService.likeComment(commentId);
-        return ResponseEntity.status(200).build();
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.deleteComment(id);
+        return ResponseEntity.ok().build();
     }
 
-    // 6. Get total comment count for a post
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/approve/{id}")
+    public ResponseEntity<Void> approve(@PathVariable Long id) {
+        service.approveComment(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/reject/{id}")
+    public ResponseEntity<Void> reject(@PathVariable Long id) {
+        service.rejectComment(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/like/{id}")
+    public ResponseEntity<Void> like(@PathVariable Long id) {
+        service.likeComment(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/unlike/{id}")
+    public ResponseEntity<Void> unlike(@PathVariable Long id) {
+        service.unlikeComment(id);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/count/{postId}")
-    public ResponseEntity<Integer> getCount(@PathVariable Long postId) {
-        return ResponseEntity.ok(commentService.getCommentCount(postId));
-    }
-
-    // 7. Delete a comment
-    @DeleteMapping("/delete/{commentId}")
-    public ResponseEntity<Void> delete(@PathVariable Long commentId) {
-        commentService.deleteComment(commentId);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Integer> count(@PathVariable Long postId) {
+        return ResponseEntity.ok(service.getCommentCount(postId));
     }
 }

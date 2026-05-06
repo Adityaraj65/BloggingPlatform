@@ -1,95 +1,60 @@
 package com.inkwell.auth.service;
 
-import com.inkwell.auth.entity.User;
-import com.inkwell.auth.dto.RegisterRequest;
+import com.inkwell.auth.dto.*;
+import com.inkwell.auth.entity.*;
 import com.inkwell.auth.repository.UserRepository;
 import com.inkwell.auth.util.JwtUtil;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 
 @Service
-public class AuthServiceImpl implements AuthService {
+public class AuthServiceImpl {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository repo;
+    private final PasswordEncoder encoder;
+    private final JwtUtil jwt;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private JwtUtil jwtUtil;
-
-    @Override
-    public User register(RegisterRequest request) {
-        // 1. Check if email already exists
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Error: Email is already registered!");
-        }
-
-        // 2. Check if username already exists
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Error: Username is already taken!");
-        }
-
-        // 3. If everything is fine, proceed with registration
-        User user = new User();
-        user.setUsername(request.getUsername());
-        user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(request.getRole());
-        user.setFullName(request.getFullName());
-        
-        return userRepository.save(user);
+    public AuthServiceImpl(UserRepository repo, PasswordEncoder encoder, JwtUtil jwt) {
+        this.repo = repo;
+        this.encoder = encoder;
+        this.jwt = jwt;
     }
 
-    @Override
-    public String login(String username, String password) {
-        User user = userRepository.findByUsername(username)
+    // Register user
+    public User register(RegisterRequest req) {
+
+        if (repo.existsByEmail(req.getEmail()))
+            throw new RuntimeException("Email exists");
+
+        User u = new User();
+        u.setUsername(req.getUsername());
+        u.setEmail(req.getEmail());
+        u.setPasswordHash(encoder.encode(req.getPassword()));
+        u.setRole(Role.valueOf(req.getRole().toUpperCase()));
+
+        return repo.save(u);
+    }
+
+    // Login user
+    public String login(LoginRequest req) {
+
+        User user = repo.findByUsername(req.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        if (passwordEncoder.matches(password, user.getPassword())) {
-            return jwtUtil.generateToken(username);
-        }
-        throw new RuntimeException("Invalid Credentials");
+
+        if (!encoder.matches(req.getPassword(), user.getPasswordHash()))
+            throw new RuntimeException("Invalid credentials");
+
+        return jwt.generateToken(user.getUsername(), user.getRole().name());
     }
 
-    @Override
-    public User getUserById(Long id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    public User getUser(Long id) {
+        return repo.findByUserId(id).orElseThrow();
     }
 
-    @Override
-    public User updateProfile(Long id, User updatedUser) {
-        User user = getUserById(id);
-        user.setFullName(updatedUser.getFullName());
-        user.setBio(updatedUser.getBio());
-        user.setAvatarUrl(updatedUser.getAvatarUrl());
-        return userRepository.save(user);
-    }
-
-    @Override
-    public void deactivateAccount(Long id) {
-        User user = getUserById(id);
-        user.setActive(false);
-        userRepository.save(user);
-    }
-
-    @Override
-    public List<User> searchUsers(String query) {
-        return userRepository.findByUsernameContainingIgnoreCase(query);
-    }
-
-    // Other methods like logout/refreshToken can be added as we implement OAuth/Redis
-    @Override public void logout(String token) {}
-    @Override public boolean validateToken(String token) { return jwtUtil.validateToken(token); }
-    @Override public String refreshToken(String token) { return null; }
-    @Override public User getUserByEmail(String email) { return userRepository.findByEmail(email).orElse(null); }
-    @Override public void changePassword(Long id, String newPassword) {
-        User user = getUserById(id);
-        user.setPassword(passwordEncoder.encode(newPassword));
-        userRepository.save(user);
+    public List<User> search(String q) {
+        return repo.findByUsernameContainingIgnoreCase(q);
     }
 }

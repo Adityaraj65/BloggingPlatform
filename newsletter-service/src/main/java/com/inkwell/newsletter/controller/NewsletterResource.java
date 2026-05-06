@@ -1,51 +1,63 @@
 package com.inkwell.newsletter.controller;
 
-import com.inkwell.newsletter.service.NewsletterService;
 import com.inkwell.newsletter.dto.SubscriberDTO;
 import com.inkwell.newsletter.dto.SubscriptionRequest;
-import com.inkwell.newsletter.entity.Subscriber;
-import com.inkwell.newsletter.service.NewsletterServiceImpl;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.inkwell.newsletter.service.NewsletterService;
+
+import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+
 @RestController
 @RequestMapping("/newsletter")
 public class NewsletterResource {
 
-    @Autowired
-    private NewsletterService service;
+    private final NewsletterService service;
 
-    // 1. Subscribe
+    public NewsletterResource(NewsletterService service) {
+        this.service = service;
+    }
+
+    // PUBLIC
     @PostMapping("/subscribe")
-    public ResponseEntity<SubscriberDTO> subscribe(@RequestBody SubscriptionRequest request) {
+    public ResponseEntity<SubscriberDTO> subscribe(@Valid @RequestBody SubscriptionRequest request) {
         return ResponseEntity.ok(service.subscribe(request));
     }
 
-    // 2. Confirm (Double Opt-in)
+    // PUBLIC
     @GetMapping("/confirm")
     public ResponseEntity<String> confirm(@RequestParam String token) {
         return ResponseEntity.ok(service.confirmSubscription(token));
     }
 
-    // 3. Send Newsletter (Admin Only Logic)
+    // ADMIN ONLY
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/send")
     public ResponseEntity<String> sendNewsletter(@RequestBody Map<String, Object> payload) {
-        // Payload will have: subject, content, targetPreferences
-        service.sendNewsletter(payload.get("subject").toString(), 
-                               payload.get("content").toString(), null);
-        return ResponseEntity.ok("Newsletter campaign started!");
+
+        service.sendNewsletter(
+                payload.get("subject").toString(),
+                payload.get("content").toString(),
+                null
+        );
+
+        return ResponseEntity.ok("Newsletter sent");
     }
 
-    // 4. Update Preferences
+    // USER
     @PutMapping("/preferences/{id}")
-    public ResponseEntity<Void> updatePrefs(@PathVariable Long id, @RequestParam String prefs) {
+    public ResponseEntity<Void> updatePrefs(@PathVariable Long id,
+                                            @RequestParam String prefs) {
         service.updatePreferences(id, prefs);
         return ResponseEntity.ok().build();
     }
 
-    // 5. Get Count (For Admin Panel)
+    // ADMIN
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/count")
     public ResponseEntity<Long> getCount() {
         return ResponseEntity.ok(service.getSubscriberCount());

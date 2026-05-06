@@ -6,11 +6,16 @@ import java.util.List;
 import java.util.Optional;
 
 public interface MediaRepository extends JpaRepository<Media, Long> {
+
     List<Media> findByUploaderId(Long uploaderId);
+
     Optional<Media> findByMediaId(Long mediaId);
+
     List<Media> findByLinkedPostId(Long linkedPostId);
+
     List<Media> findByMimeType(String mimeType);
+
     List<Media> findByIsDeleted(boolean isDeleted);
+
     int countByUploaderId(Long uploaderId);
-    void deleteByMediaId(Long mediaId);
 }
