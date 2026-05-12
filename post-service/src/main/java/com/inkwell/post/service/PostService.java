@@ -6,7 +6,10 @@ import java.util.List;
 
 public interface PostService {
 
-    PostResponseDTO createPost(PostRequestDTO dto);
+    PostResponseDTO createPost(
+            PostRequestDTO dto,
+            boolean publish
+    );
 
     PostResponseDTO getPostById(Long id);
 
@@ -18,7 +21,10 @@ public interface PostService {
 
     List<PostResponseDTO> searchPosts(String query);
 
-    PostResponseDTO updatePost(Long id, PostRequestDTO dto);
+    PostResponseDTO updatePost(
+            Long id,
+            PostRequestDTO dto
+    );
 
     void publishPost(Long id);
 

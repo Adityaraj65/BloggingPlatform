@@ -2,8 +2,11 @@ package com.inkwell.web.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -17,22 +20,33 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
 
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/login", "/register", "/css/**", "/js/**").permitAll()
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/author/**").hasAnyRole("AUTHOR", "ADMIN")
-                .anyRequest().authenticated()
+
+                    // PUBLIC
+                    .requestMatchers(
+                            "/",
+                            "/login",
+                            "/register",
+                            "/css/**",
+                            "/js/**",
+                            "/images/**"
+                    ).permitAll()
+
+                    // AUTHOR
+                    .requestMatchers("/author/**").permitAll()
+
+                    // ADMIN
+                    .requestMatchers("/admin/**").permitAll()
+
+                    // EVERYTHING ELSE
+                    .anyRequest().permitAll()
             )
 
-            .formLogin(login -> login
-                .loginPage("/login")
-                .defaultSuccessUrl("/", true)
-                .permitAll()
-            )
+            // DISABLE SPRING LOGIN SYSTEM
+            .formLogin(form -> form.disable())
 
-            .logout(logout -> logout
-                .logoutUrl("/logout")
-                .logoutSuccessUrl("/login")
-            );
+            .httpBasic(Customizer.withDefaults())
+
+            .logout(logout -> logout.disable());
 
         return http.build();
     }

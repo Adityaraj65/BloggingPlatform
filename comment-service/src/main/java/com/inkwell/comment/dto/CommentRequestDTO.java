@@ -4,19 +4,39 @@ import jakarta.validation.constraints.*;
 
 public class CommentRequestDTO {
 
-    @NotNull
+    @NotNull(message = "Post ID is required")
     private Long postId;
 
-    @NotNull
+    @NotNull(message = "Author ID is required")
     private Long authorId;
 
     private Long parentCommentId;
 
-    @NotBlank
+    @NotBlank(message = "Comment content is required")
+    @Size(min = 3, max = 1000, message = "Comment content must be between 3 and 1000 characters")
     private String content;
+    
+    private String authorName;
+    private String authorUsername;
 
     // getters/setters
     
+	public String getAuthorName() {
+		return authorName;
+	}
+
+	public void setAuthorName(String authorName) {
+		this.authorName = authorName;
+	}
+
+	public String getAuthorUsername() {
+		return authorUsername;
+	}
+
+	public void setAuthorUsername(String authorUsername) {
+		this.authorUsername = authorUsername;
+	}
+
 	public Long getPostId() {
 		return postId;
 	}

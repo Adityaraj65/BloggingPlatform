@@ -1,15 +1,24 @@
 package com.inkwell.post.controller;
-
-import com.inkwell.post.dto.*;
-import com.inkwell.post.service.PostService;
-
-import jakarta.validation.Valid;
+import jakarta.annotation.security.PermitAll;
+import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import com.inkwell.post.dto.PostRequestDTO;
+import com.inkwell.post.dto.PostResponseDTO;
+import com.inkwell.post.service.PostService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/posts")
@@ -22,104 +31,124 @@ public class PostResource {
     }
 
     // ================= CREATE POST =================
-    // Only AUTHOR or ADMIN can create posts
-    @PreAuthorize("hasAnyRole('AUTHOR','ADMIN')")
+    // AUTHOR or ADMIN
+    @PreAuthorize("@roleSecurity.canCreateForAuthor(#dto.authorId)")
     @PostMapping
-    public ResponseEntity<PostResponseDTO> create(@Valid @RequestBody PostRequestDTO dto) {
-        return ResponseEntity.ok(service.createPost(dto));
+    public ResponseEntity<PostResponseDTO> create(
+            @RequestBody PostRequestDTO dto,
+            @RequestParam(defaultValue = "false") boolean publish) {
+
+        return ResponseEntity.ok(
+                service.createPost(dto, publish)
+        );
     }
 
     // ================= GET POST BY ID =================
-    // Any authenticated user can access
+    @PermitAll
     @GetMapping("/{id}")
     public ResponseEntity<PostResponseDTO> get(@PathVariable Long id) {
+
         return ResponseEntity.ok(service.getPostById(id));
     }
 
     // ================= GET POST BY SLUG =================
-    // Public endpoint (used by frontend)
     @GetMapping("/slug/{slug}")
-    public ResponseEntity<PostResponseDTO> getSlug(@PathVariable String slug) {
+    public ResponseEntity<PostResponseDTO> getSlug(
+            @PathVariable String slug) {
+
         return ResponseEntity.ok(service.getPostBySlug(slug));
     }
 
     // ================= GET PUBLISHED POSTS =================
-    // Public feed (homepage)
     @GetMapping("/published")
     public ResponseEntity<List<PostResponseDTO>> published() {
+
         return ResponseEntity.ok(service.getPublishedPosts());
     }
 
     // ================= UPDATE POST =================
-    // Only AUTHOR or ADMIN
-    @PreAuthorize("hasAnyRole('AUTHOR','ADMIN')")
+    // AUTHOR or ADMIN
+    @PreAuthorize("@roleSecurity.canManagePost(#id)")
     @PutMapping("/{id}")
-    public ResponseEntity<PostResponseDTO> update(@PathVariable Long id,
-                                                 @Valid @RequestBody PostRequestDTO dto) {
+    public ResponseEntity<PostResponseDTO> update(
+            @PathVariable Long id,
+            @Valid @RequestBody PostRequestDTO dto) {
+
         return ResponseEntity.ok(service.updatePost(id, dto));
     }
 
     // ================= PUBLISH POST =================
-    // Only ADMIN can publish
-    @PreAuthorize("hasRole('ADMIN')")
+    // OWNER AUTHOR or ADMIN
+    @PreAuthorize("@roleSecurity.canManagePost(#id)")
     @PostMapping("/publish/{id}")
     public ResponseEntity<Void> publish(@PathVariable Long id) {
+
         service.publishPost(id);
+
         return ResponseEntity.ok().build();
     }
 
     // ================= UNPUBLISH POST =================
-    // Only ADMIN
-    @PreAuthorize("hasRole('ADMIN')")
+    // OWNER AUTHOR or ADMIN
+    @PreAuthorize("@roleSecurity.canManagePost(#id)")
     @PostMapping("/unpublish/{id}")
     public ResponseEntity<Void> unpublish(@PathVariable Long id) {
+
         service.unpublishPost(id);
+
         return ResponseEntity.ok().build();
     }
 
     // ================= DELETE POST =================
-    // Only ADMIN
-    @PreAuthorize("hasRole('ADMIN')")
+    // OWNER AUTHOR or ADMIN
+    @PreAuthorize("@roleSecurity.canManagePost(#id)")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
+
         service.deletePost(id);
+
         return ResponseEntity.ok().build();
     }
 
     // ================= LIKE POST =================
-    // Any logged-in user
     @PostMapping("/like/{id}")
     public ResponseEntity<Void> like(@PathVariable Long id) {
+
         service.likePost(id);
+
         return ResponseEntity.ok().build();
     }
 
     // ================= UNLIKE POST =================
-    // Any logged-in user
     @PostMapping("/unlike/{id}")
     public ResponseEntity<Void> unlike(@PathVariable Long id) {
+
         service.unlikePost(id);
+
         return ResponseEntity.ok().build();
     }
 
     // ================= SEARCH POSTS =================
-    // Public search
     @GetMapping("/search")
-    public ResponseEntity<List<PostResponseDTO>> search(@RequestParam String query) {
+    public ResponseEntity<List<PostResponseDTO>> search(
+            @RequestParam String query) {
+
         return ResponseEntity.ok(service.searchPosts(query));
     }
 
     // ================= GET POSTS BY AUTHOR =================
-    // Dashboard use-case
     @GetMapping("/author/{authorId}")
-    public ResponseEntity<List<PostResponseDTO>> getByAuthor(@PathVariable Long authorId) {
+    public ResponseEntity<List<PostResponseDTO>> getByAuthor(
+            @PathVariable Long authorId) {
+
         return ResponseEntity.ok(service.getPostsByAuthor(authorId));
     }
 
     // ================= COUNT POSTS =================
-    // Used for analytics/dashboard
     @GetMapping("/count/{authorId}")
-    public ResponseEntity<Integer> count(@PathVariable Long authorId) {
+    public ResponseEntity<Integer> count(
+            @PathVariable Long authorId) {
+
         return ResponseEntity.ok(service.getPostCountByAuthor(authorId));
     }
 }

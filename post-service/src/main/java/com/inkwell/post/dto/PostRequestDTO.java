@@ -1,70 +1,117 @@
 package com.inkwell.post.dto;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 public class PostRequestDTO {
 
-    @NotBlank(message = "Title is required")
+    // OPTIONAL
     private String title;
 
-    @NotBlank(message = "Content is required")
+    // OPTIONAL
     private String content;
 
+    // OPTIONAL
     private String excerpt;
+    public String getAuthorName() {
+		return authorName;
+	}
+
+	public void setAuthorName(String authorName) {
+		this.authorName = authorName;
+	}
+
+	public String getAuthorUsername() {
+		return authorUsername;
+	}
+
+	public void setAuthorUsername(String authorUsername) {
+		this.authorUsername = authorUsername;
+	}
+
+	public String getAuthorAvatar() {
+		return authorAvatar;
+	}
+
+	public void setAuthorAvatar(String authorAvatar) {
+		this.authorAvatar = authorAvatar;
+	}
+
+	private String authorName;
+
+    private String authorUsername;
+
+    private String authorAvatar;
+    
+    private String status;
+    
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    @Pattern(
+        regexp = "^(|https?://.*)$",
+        message = "Invalid image URL format"
+    )
     private String featuredImageUrl;
 
     @NotNull(message = "AuthorId is required")
     private Long authorId;
 
+//    @NotNull(message = "Category is required")
     private Long categoryId;
 
-	public String getTitle() {
-		return title;
-	}
+    // ================= GETTERS / SETTERS =================
 
-	public void setTitle(String title) {
-		this.title = title;
-	}
+    public String getTitle() {
+        return title;
+    }
 
-	public String getContent() {
-		return content;
-	}
+    public void setTitle(String title) {
+        this.title = title;
+    }
 
-	public void setContent(String content) {
-		this.content = content;
-	}
+    public String getContent() {
+        return content;
+    }
 
-	public String getExcerpt() {
-		return excerpt;
-	}
+    public void setContent(String content) {
+        this.content = content;
+    }
 
-	public void setExcerpt(String excerpt) {
-		this.excerpt = excerpt;
-	}
+    public String getExcerpt() {
+        return excerpt;
+    }
 
-	public String getFeaturedImageUrl() {
-		return featuredImageUrl;
-	}
+    public void setExcerpt(String excerpt) {
+        this.excerpt = excerpt;
+    }
 
-	public void setFeaturedImageUrl(String featuredImageUrl) {
-		this.featuredImageUrl = featuredImageUrl;
-	}
+    public String getFeaturedImageUrl() {
+        return featuredImageUrl;
+    }
 
-	public Long getAuthorId() {
-		return authorId;
-	}
+    public void setFeaturedImageUrl(String featuredImageUrl) {
+        this.featuredImageUrl = featuredImageUrl;
+    }
 
-	public void setAuthorId(Long authorId) {
-		this.authorId = authorId;
-	}
+    public Long getAuthorId() {
+        return authorId;
+    }
 
-	public Long getCategoryId() {
-		return categoryId;
-	}
+    public void setAuthorId(Long authorId) {
+        this.authorId = authorId;
+    }
 
-	public void setCategoryId(Long categoryId) {
-		this.categoryId = categoryId;
-	}
+    public Long getCategoryId() {
+        return categoryId;
+    }
 
-    // getters & setters
+    public void setCategoryId(Long categoryId) {
+        this.categoryId = categoryId;
+    }
 }

@@ -42,11 +42,18 @@ public class NewsletterServiceImpl implements NewsletterService {
         Subscriber saved = repository.save(s);
 
         // send confirmation email
-        notificationClient.sendEmail(
-                s.getEmail(),
-                "Confirm Subscription",
-                "Click to confirm: http://localhost:8080/newsletter/confirm?token=" + s.getToken()
-        );
+        try {
+
+            notificationClient.sendEmail(
+                    s.getEmail(),
+                    "Confirm Subscription",
+                    "Click to confirm: http://localhost:8080/newsletter/confirm?token=" + s.getToken()
+            );
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+        }
 
         return mapToDTO(saved);
     }

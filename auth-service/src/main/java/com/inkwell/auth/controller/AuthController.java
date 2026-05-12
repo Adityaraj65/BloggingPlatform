@@ -1,7 +1,6 @@
 package com.inkwell.auth.controller;
 
 import com.inkwell.auth.dto.*;
-import com.inkwell.auth.entity.User;
 import com.inkwell.auth.service.AuthServiceImpl;
 
 import org.springframework.http.ResponseEntity;
@@ -21,7 +20,7 @@ public class AuthController {
 
     // Register API
     @PostMapping("/register")
-    public ResponseEntity<User> register(@Valid @RequestBody RegisterRequest req) {
+    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest req) {
         return ResponseEntity.ok(service.register(req));
     }
 
@@ -33,7 +32,13 @@ public class AuthController {
 
     // Get profile
     @GetMapping("/profile/{id}")
-    public ResponseEntity<User> profile(@PathVariable Long id) {
+    public ResponseEntity<UserResponse> profile(@PathVariable Long id) {
         return ResponseEntity.ok(service.getUser(id));
+    }
+
+    // Update profile
+    @PutMapping("/profile/{id}")
+    public ResponseEntity<UserResponse> updateProfile(@PathVariable Long id, @Valid @RequestBody UpdateProfileRequest req) {
+        return ResponseEntity.ok(service.updateProfile(id, req));
     }
 }

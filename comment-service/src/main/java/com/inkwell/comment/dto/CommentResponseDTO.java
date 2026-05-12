@@ -10,10 +10,47 @@ public class CommentResponseDTO {
     private Long authorId;
     private String content;
     private int likesCount;
-    private String status;
-    private LocalDateTime createdAt;
+    private String authorName;
+    private String authorUsername;
+    private Long parentCommentId;
+    
+    public Long getParentCommentId() {
+        return parentCommentId;
+    }
 
-    // Nested replies
+    public void setParentCommentId(Long parentCommentId) {
+        this.parentCommentId = parentCommentId;
+    }
+    public String getAuthorName() {
+		return authorName;
+	}
+
+	public void setAuthorName(String authorName) {
+		this.authorName = authorName;
+	}
+
+	public String getAuthorUsername() {
+		return authorUsername;
+	}
+
+	public void setAuthorUsername(String authorUsername) {
+		this.authorUsername = authorUsername;
+	}
+
+	private String status;
+    private LocalDateTime createdAt;
+    private long commentCount;
+   
+
+    public long getCommentCount() {
+		return commentCount;
+	}
+
+	public void setCommentCount(long commentCount) {
+		this.commentCount = commentCount;
+	}
+
+	// Nested replies
     private List<CommentResponseDTO> replies;
 
 	public Long getCommentId() {

@@ -1,13 +1,20 @@
 package com.inkwell.notification.resource;
 
-import com.inkwell.notification.entity.Notification;
-import com.inkwell.notification.service.NotificationService;
+import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import com.inkwell.notification.entity.Notification;
+import com.inkwell.notification.service.NotificationService;
 
 @RestController
 @RequestMapping("/notifications")
@@ -36,7 +43,7 @@ public class NotificationResource {
     }
 
     // ADMIN ONLY
-    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/send-bulk")
     public ResponseEntity<Void> sendBulk(@RequestBody List<Long> ids,
                                          @RequestParam String title,
@@ -48,6 +55,16 @@ public class NotificationResource {
     @DeleteMapping("/delete-read")
     public ResponseEntity<Void> deleteRead(@RequestParam Long recipientId) {
         notifService.deleteRead(recipientId);
+        return ResponseEntity.ok().build();
+    }
+    @PostMapping("/send-email")
+    public ResponseEntity<Void> sendEmail(
+            @RequestParam String to,
+            @RequestParam String subject,
+            @RequestParam String body) {
+
+        notifService.sendEmail(to, subject, body);
+
         return ResponseEntity.ok().build();
     }
 }

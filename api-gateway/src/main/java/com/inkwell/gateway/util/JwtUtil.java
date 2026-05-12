@@ -39,4 +39,25 @@ public class JwtUtil {
                 .getBody()
                 .getSubject();
     }
+
+    // Extract role from token
+    public String extractRole(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSignKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("role", String.class);
+    }
+
+    public String extractUserId(String token) {
+        Object userId = Jwts.parserBuilder()
+                .setSigningKey(getSignKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("userId");
+
+        return userId != null ? userId.toString() : null;
+    }
 }

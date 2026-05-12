@@ -13,6 +13,9 @@ public class Comment {
 
     private Long postId;
     private Long authorId;
+    private String authorName;
+
+    private String authorUsername;
 
     // null → top level comment
     private Long parentCommentId;
@@ -27,6 +30,20 @@ public class Comment {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    
+  
+	public String getAuthorName() {
+		return authorName;
+	}
+	public void setAuthorName(String authorName) {
+		this.authorName = authorName;
+	}
+	public String getAuthorUsername() {
+		return authorUsername;
+	}
+	public void setAuthorUsername(String authorUsername) {
+		this.authorUsername = authorUsername;
+	}
 	public Long getCommentId() {
 		return commentId;
 	}

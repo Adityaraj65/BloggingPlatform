@@ -13,8 +13,18 @@ public class FeignConfig implements RequestInterceptor {
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (attributes != null) {
             String authToken = attributes.getRequest().getHeader("Authorization");
+            String userHeader = attributes.getRequest().getHeader("X-auth-user");
+            String roleHeader = attributes.getRequest().getHeader("X-auth-role");
+            
             if (authToken != null) {
                 template.header("Authorization", authToken);
+            }
+            // Also forward gateway headers if present
+            if (userHeader != null) {
+                template.header("X-auth-user", userHeader);
+            }
+            if (roleHeader != null) {
+                template.header("X-auth-role", roleHeader);
             }
         }
     }

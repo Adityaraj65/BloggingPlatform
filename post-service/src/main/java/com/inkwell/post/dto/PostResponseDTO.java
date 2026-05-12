@@ -21,6 +21,37 @@ public class PostResponseDTO {
     private LocalDateTime publishedAt;
 
     private Long categoryId;
+    private Long authorId;
+    
+    private String authorName;
+
+    private String authorUsername;
+
+    private String authorAvatar;
+
+	public String getAuthorName() {
+		return authorName;
+	}
+
+	public void setAuthorName(String authorName) {
+		this.authorName = authorName;
+	}
+
+	public String getAuthorUsername() {
+		return authorUsername;
+	}
+
+	public void setAuthorUsername(String authorUsername) {
+		this.authorUsername = authorUsername;
+	}
+
+	public String getAuthorAvatar() {
+		return authorAvatar;
+	}
+
+	public void setAuthorAvatar(String authorAvatar) {
+		this.authorAvatar = authorAvatar;
+	}
 
 	public Long getPostId() {
 		return postId;
@@ -126,5 +157,11 @@ public class PostResponseDTO {
 		this.categoryId = categoryId;
 	}
 
-    // getters & setters
+	public Long getAuthorId() {
+		return authorId;
+	}
+
+	public void setAuthorId(Long authorId) {
+		this.authorId = authorId;
+	}
 }

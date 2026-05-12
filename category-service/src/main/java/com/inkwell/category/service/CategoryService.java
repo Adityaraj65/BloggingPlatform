@@ -1,8 +1,9 @@
 package com.inkwell.category.service;
 
-import com.inkwell.category.dto.CategoryDTO;
-import com.inkwell.category.entity.Tag;
 import java.util.List;
+
+import com.inkwell.category.dto.CategoryDTO;
+import com.inkwell.category.dto.TagDTO;
 
 public interface CategoryService {
 
@@ -13,10 +14,11 @@ public interface CategoryService {
     CategoryDTO updateCategory(Long id, CategoryDTO dto);
     void deleteCategory(Long id);
 
-    // TAG (using entity directly as per your structure)
-    Tag createTag(Tag tag);
-    Tag getTagBySlug(String slug);
-    List<Tag> getAllTags();
-    List<Tag> getTrendingTags();
+    // TAG
+    TagDTO createTag(TagDTO tag);
+    TagDTO getTagBySlug(String slug);
+    List<TagDTO> getAllTags();
+    List<TagDTO> getTrendingTags();
     void deleteTag(Long id);
+    CategoryDTO getById(Long id);
 }

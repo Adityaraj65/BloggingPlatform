@@ -1,15 +1,16 @@
 package com.inkwell.category.service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+
 import com.inkwell.category.dto.CategoryDTO;
+import com.inkwell.category.dto.TagDTO;
 import com.inkwell.category.entity.Category;
 import com.inkwell.category.entity.Tag;
 import com.inkwell.category.repository.CategoryRepository;
 import com.inkwell.category.repository.TagRepository;
-
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class CategoryServiceImpl implements CategoryService {
@@ -77,35 +78,53 @@ public class CategoryServiceImpl implements CategoryService {
     // -------- TAG --------
 
     @Override
-    public Tag createTag(Tag tag) {
+    public TagDTO createTag(TagDTO dto) {
 
-        if (tagRepo.existsByName(tag.getName())) {
+        if (tagRepo.existsByName(dto.getName())) {
             throw new RuntimeException("Tag already exists");
         }
 
-        tag.setSlug(generateSlug(tag.getName()));
-        return tagRepo.save(tag);
+        Tag tag = new Tag();
+        tag.setName(dto.getName());
+        tag.setSlug(generateSlug(dto.getName()));
+
+        Tag savedTag = tagRepo.save(tag);
+        return mapTag(savedTag);
     }
 
     @Override
-    public Tag getTagBySlug(String slug) {
-        return tagRepo.findBySlug(slug)
+    public TagDTO getTagBySlug(String slug) {
+        Tag tag = tagRepo.findBySlug(slug)
                 .orElseThrow(() -> new RuntimeException("Tag not found"));
+        return mapTag(tag);
     }
 
     @Override
-    public List<Tag> getAllTags() {
-        return tagRepo.findAll();
+    public List<TagDTO> getAllTags() {
+        return tagRepo.findAll()
+                .stream()
+                .map(this::mapTag)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public List<Tag> getTrendingTags() {
-        return tagRepo.findTop10ByOrderByPostCountDesc();
+    public List<TagDTO> getTrendingTags() {
+        return tagRepo.findTop10ByOrderByPostCountDesc()
+                .stream()
+                .map(this::mapTag)
+                .collect(Collectors.toList());
     }
 
     @Override
     public void deleteTag(Long id) {
         tagRepo.deleteById(id);
+    }
+    
+    @Override
+    public CategoryDTO getById(Long id) {
+        Category c = categoryRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+        return mapCategory(c);
     }
 
     // -------- HELPERS --------
@@ -123,6 +142,16 @@ public class CategoryServiceImpl implements CategoryService {
         dto.setParentCategoryId(c.getParentCategoryId());
         dto.setPostCount(c.getPostCount());
         dto.setCreatedAt(c.getCreatedAt());
+        return dto;
+    }
+
+    private TagDTO mapTag(Tag tag) {
+        TagDTO dto = new TagDTO();
+        dto.setTagId(tag.getTagId());
+        dto.setName(tag.getName());
+        dto.setSlug(tag.getSlug());
+        dto.setPostCount(tag.getPostCount());
+        dto.setCreatedAt(tag.getCreatedAt());
         return dto;
     }
 }

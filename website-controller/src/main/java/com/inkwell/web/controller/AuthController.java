@@ -1,12 +1,17 @@
 package com.inkwell.web.controller;
 
-import com.inkwell.web.client.AuthClient;
-import jakarta.servlet.http.HttpSession;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.inkwell.web.client.AuthClient;
+
+import jakarta.servlet.http.HttpSession;
 
 @Controller
 public class AuthController {
@@ -18,25 +23,34 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public String login(@RequestParam String email,
+    @ResponseBody
+    public Object login(@RequestParam String email,
                         @RequestParam String password,
                         HttpSession session) {
 
         Map<String, String> req = new HashMap<>();
+
         req.put("email", email);
         req.put("password", password);
 
         Map<String, String> response = authClient.login(req);
 
-        // Store JWT in session
-        session.setAttribute("JWT", response.get("token"));
+        System.out.println("LOGIN RESPONSE = " + response);
 
-        return "redirect:/";
+        String token = response.get("token");
+
+        System.out.println("TOKEN = " + token);
+
+        session.setAttribute("JWT", token);
+
+        return response;
     }
 
     @GetMapping("/logout")
     public String logout(HttpSession session) {
+
         session.invalidate();
+
         return "redirect:/login";
     }
 }

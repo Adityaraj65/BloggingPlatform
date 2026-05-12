@@ -1,39 +1,38 @@
 package com.inkwell.comment.security;
 
-import org.springframework.context.annotation.*;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.web.*;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@EnableMethodSecurity // enables @PreAuthorize
+@EnableMethodSecurity
 public class SecurityConfig {
-
-    private final JwtUtil jwtUtil;
-
-    public SecurityConfig(JwtUtil jwtUtil) {
-        this.jwtUtil = jwtUtil;
-    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-        JwtAuthFilter filter = new JwtAuthFilter(jwtUtil);
+        GatewayHeaderAuthenticationFilter filter =
+                new GatewayHeaderAuthenticationFilter();
 
         http
             .csrf(csrf -> csrf.disable())
-            .sessionManagement(s ->
-                    s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                    // Public endpoints (no login required)
-            		.requestMatchers("/comments/post/**").permitAll()
-            		.requestMatchers("/comments/replies/**").permitAll()
 
-                    // Everything else needs authentication
+            .sessionManagement(session ->
+                    session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+            .authorizeHttpRequests(auth -> auth
+                    .requestMatchers(
+                            "/comments/post/**",
+                            "/comments/replies/**"
+                    ).permitAll()
+
                     .anyRequest().authenticated()
             )
+
             .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

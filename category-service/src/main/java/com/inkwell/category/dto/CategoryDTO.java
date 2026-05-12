@@ -1,16 +1,32 @@
 package com.inkwell.category.dto;
 
 import java.time.LocalDateTime;
-
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 public class CategoryDTO {
     private Long categoryId;
+    
+    @NotBlank(message = "Category name is required")
+    @Size(min = 2, max = 100, message = "Category name must be between 2 and 100 characters")
     private String name;
+    
     private String slug;
+    
+    @Size(max = 500, message = "Description must not exceed 500 characters")
     private String description;
+    
     private Long parentCategoryId;
     private int postCount;
     private LocalDateTime createdAt;
+    
+    private String categoryName;
+	public String getCategoryName() {
+		return categoryName;
+	}
+	public void setCategoryName(String categoryName) {
+		this.categoryName = categoryName;
+	}
 	public Long getCategoryId() {
 		return categoryId;
 	}

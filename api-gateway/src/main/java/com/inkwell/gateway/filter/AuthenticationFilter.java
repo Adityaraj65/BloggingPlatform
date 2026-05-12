@@ -55,13 +55,17 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                     return onError(exchange, "Invalid Token", HttpStatus.UNAUTHORIZED);
                 }
 
-                // Extract username
+                // Extract username and role
                 String username = jwtUtil.extractUsername(token);
+                String role = jwtUtil.extractRole(token);
+                String userId = jwtUtil.extractUserId(token);
 
-                // Forward username to downstream services
+                // Forward username and role to downstream services
                 ServerHttpRequest modifiedRequest = exchange.getRequest()
                         .mutate()
                         .header("X-auth-user", username)
+                        .header("X-auth-role", role)
+                        .header("X-auth-user-id", userId == null ? "" : userId)
                         .build();
 
                 return chain.filter(exchange.mutate().request(modifiedRequest).build());
@@ -75,8 +79,11 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
     private Mono<Void> onError(ServerWebExchange exchange, String err, HttpStatus status) {
 
         exchange.getResponse().setStatusCode(status);
+        exchange.getResponse().getHeaders().setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
 
-        byte[] bytes = err.getBytes();
+        // Create JSON error response
+        String errorJson = "{\"error\":\"" + err + "\",\"status\":" + status.value() + ",\"timestamp\":\"" + java.time.Instant.now() + "\"}";
+        byte[] bytes = errorJson.getBytes(java.nio.charset.StandardCharsets.UTF_8);
 
         return exchange.getResponse()
                 .writeWith(Mono.just(exchange.getResponse()
