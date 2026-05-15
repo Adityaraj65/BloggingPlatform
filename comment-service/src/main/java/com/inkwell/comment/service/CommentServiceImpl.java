@@ -3,9 +3,12 @@ package com.inkwell.comment.service;
 import com.inkwell.comment.client.PostClient;
 import com.inkwell.comment.dto.CommentRequestDTO;
 import com.inkwell.comment.dto.CommentResponseDTO;
+import com.inkwell.comment.dto.NotificationEvent;
+import com.inkwell.comment.dto.PostDTO;
 import com.inkwell.comment.entity.Comment;
 import com.inkwell.comment.repository.CommentRepository;
 
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -18,16 +21,21 @@ public class CommentServiceImpl implements CommentService {
     private final CommentRepository repo;
 
     private final PostClient postClient;
+    
+    private final RabbitTemplate rabbitTemplate;
 
     public CommentServiceImpl(
             CommentRepository repo,
-            PostClient postClient
+            PostClient postClient,
+            RabbitTemplate rabbitTemplate
     ) {
 
         this.repo = repo;
-        this.postClient = postClient;
-    }
 
+        this.postClient = postClient;
+
+        this.rabbitTemplate = rabbitTemplate;
+    }
     // ================= ADD COMMENT =================
 
     @Override
@@ -35,8 +43,12 @@ public class CommentServiceImpl implements CommentService {
             CommentRequestDTO dto
     ) {
 
-        // Validate post exists
-        postClient.getPost(dto.getPostId());
+    	// ================= FETCH POST =================
+
+    	PostDTO post =
+    	        postClient.getPost(
+    	                dto.getPostId()
+    	        );
 
         Comment c = new Comment();
 
@@ -60,9 +72,62 @@ public class CommentServiceImpl implements CommentService {
 
         c.setCreatedAt(LocalDateTime.now());
 
-        return map(
-                repo.save(c)
+        Comment savedComment =
+                repo.save(c);
+
+     // ================= EVENT =================
+
+        NotificationEvent event =
+                new NotificationEvent();
+
+        event.setRecipientId(
+                post.getAuthorId()
         );
+
+        event.setActorId(dto.getAuthorId());
+
+        event.setType("COMMENT");
+
+        event.setTitle("New Comment");
+
+        event.setMessage(
+                dto.getAuthorName()
+                + " commented on "
+                + post.getTitle()
+        );
+
+        event.setRelatedId(
+                savedComment.getCommentId()
+        );
+
+        event.setRelatedType("COMMENT");
+
+        if (dto.getParentCommentId() != null) {
+
+            rabbitTemplate.convertAndSend(
+                    "inkwell.events",
+                    "comment.reply",
+                    event
+            );
+
+            System.out.println(
+                    "COMMENT REPLY EVENT SENT"
+            );
+
+        } else {
+
+            rabbitTemplate.convertAndSend(
+                    "inkwell.events",
+                    "comment.created",
+                    event
+            );
+
+            System.out.println(
+                    "COMMENT EVENT SENT"
+            );
+        }
+
+        return map(savedComment);
     }
 
     // ================= GET COMMENTS =================

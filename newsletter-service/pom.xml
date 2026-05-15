@@ -65,6 +65,13 @@
     <artifactId>spring-boot-starter-security</artifactId>
 </dependency>
 
+ <!--rabbitmq -->
+        <dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-amqp</artifactId>
+</dependency>
+
+
 <!-- JWT -->
 <dependency>
     <groupId>io.jsonwebtoken</groupId>

@@ -4,6 +4,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
 import com.inkwell.comment.config.FeignConfig;
+import com.inkwell.comment.dto.PostDTO;
 
 @FeignClient(
     name = "POST-SERVICE",
@@ -12,7 +13,7 @@ import com.inkwell.comment.config.FeignConfig;
 public interface PostClient {
 
     @GetMapping("/posts/{id}")
-    Object getPost(
+    PostDTO getPost(
         @PathVariable("id") Long id
     );
 }

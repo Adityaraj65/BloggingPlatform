@@ -78,6 +78,14 @@
       <artifactId>mysql-connector-j</artifactId>
       <scope>runtime</scope>
     </dependency>
+     <!--rabbitmq -->
+        <!-- RABBITMQ -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-amqp</artifactId>
+    <version>3.2.5</version>
+</dependency>
+
 
     <!-- TEST -->
     <dependency>
