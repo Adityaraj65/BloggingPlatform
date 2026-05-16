@@ -20,9 +20,7 @@ public class NotificationConsumer {
                 notificationService;
     }
 
-    @RabbitListener(
-            queues = "notification.queue"
-    )
+    @RabbitListener(queues = "notification.queue")
     public void consume(
             NotificationEvent event
     ) {
@@ -35,4 +33,5 @@ public class NotificationConsumer {
         notificationService
                 .sendEventNotification(event);
     }
+
 }

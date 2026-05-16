@@ -15,9 +15,9 @@ public class RabbitMQBeans {
     // ================= JSON CONVERTER =================
 
     @Bean
-    public MessageConverter messageConverter() {
+    public MessageConverter jsonMessageConverter(com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
 
-        return new Jackson2JsonMessageConverter();
+        return new Jackson2JsonMessageConverter(objectMapper);
     }
 
     // ================= RABBIT TEMPLATE =================

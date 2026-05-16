@@ -77,6 +77,15 @@ public class GlobalExceptionHandler {
                     .body(response);
         }
 
+        if (
+            ex.getMessage().equals("Please verify your email before logging in.")
+        ) {
+
+            return ResponseEntity
+                    .status(403)
+                    .body(response);
+        }
+
         return ResponseEntity
                 .badRequest()
                 .body(response);

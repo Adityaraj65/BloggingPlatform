@@ -8,7 +8,7 @@ import java.util.Map;
 public interface NewsletterService {
     SubscriberDTO subscribe(SubscriptionRequest request);
     String confirmSubscription(String token);
-    void unsubscribe(String email);
+    void unsubscribe(String token);
     
     // Missing Methods as per Figure 7
     void sendNewsletter(String subject, String content, List<Integer> preferenceIds);

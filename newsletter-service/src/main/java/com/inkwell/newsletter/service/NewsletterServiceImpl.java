@@ -6,6 +6,9 @@ import com.inkwell.newsletter.dto.SubscriptionRequest;
 import com.inkwell.newsletter.entity.Subscriber;
 import com.inkwell.newsletter.repository.SubscriberRepository;
 
+import com.inkwell.newsletter.dto.EmailEvent;
+import com.inkwell.newsletter.config.RabbitMQConfig;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -16,12 +19,12 @@ import java.util.UUID;
 public class NewsletterServiceImpl implements NewsletterService {
 
     private final SubscriberRepository repository;
-    private final NotificationClient notificationClient;
+    private final RabbitTemplate rabbitTemplate;
 
     public NewsletterServiceImpl(SubscriberRepository repository,
-                                 NotificationClient notificationClient) {
+                                 RabbitTemplate rabbitTemplate) {
         this.repository = repository;
-        this.notificationClient = notificationClient;
+        this.rabbitTemplate = rabbitTemplate;
     }
 
     // 1. SUBSCRIBE
@@ -43,15 +46,13 @@ public class NewsletterServiceImpl implements NewsletterService {
 
         // send confirmation email
         try {
-
-            notificationClient.sendEmail(
+            EmailEvent emailEvent = new EmailEvent(
                     s.getEmail(),
                     "Confirm Subscription",
                     "Click to confirm: http://localhost:8080/newsletter/confirm?token=" + s.getToken()
             );
-
+            rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.EMAIL_SEND, emailEvent);
         } catch (Exception e) {
-
             e.printStackTrace();
         }
 
@@ -68,26 +69,32 @@ public class NewsletterServiceImpl implements NewsletterService {
         s.setStatus("ACTIVE");
         repository.save(s);
 
-        notificationClient.sendEmail(
+        EmailEvent emailEvent = new EmailEvent(
                 s.getEmail(),
                 "Welcome",
                 "You are now subscribed!"
         );
+        try {
+            rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.EMAIL_SEND, emailEvent);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         return "Subscription confirmed!";
     }
 
     // 3. UNSUBSCRIBE
     @Override
-    public void unsubscribe(String email) {
+    public void unsubscribe(String token) {
 
-        Subscriber s = repository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Email not found"));
+        Subscriber s = repository.findByToken(token)
+                .orElse(null);
 
-        s.setStatus("UNSUBSCRIBED");
-        s.setUnsubscribedAt(LocalDateTime.now());
-
-        repository.save(s);
+        if (s != null && !s.getStatus().equals("UNSUBSCRIBED")) {
+            s.setStatus("UNSUBSCRIBED");
+            s.setUnsubscribedAt(LocalDateTime.now());
+            repository.save(s);
+        }
     }
 
     // 4. SEND NEWSLETTER (ADMIN)
@@ -96,9 +103,14 @@ public class NewsletterServiceImpl implements NewsletterService {
 
         List<Subscriber> active = repository.findByStatus("ACTIVE");
 
-        active.forEach(s ->
-                notificationClient.sendEmail(s.getEmail(), subject, content)
-        );
+        active.forEach(s -> {
+            try {
+                EmailEvent emailEvent = new EmailEvent(s.getEmail(), subject, content);
+                rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.EMAIL_SEND, emailEvent);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     // 5. POST PUBLISH TRIGGER
@@ -107,13 +119,18 @@ public class NewsletterServiceImpl implements NewsletterService {
 
         List<Subscriber> active = repository.findByStatus("ACTIVE");
 
-        active.forEach(s ->
-                notificationClient.sendEmail(
+        active.forEach(s -> {
+            try {
+                EmailEvent emailEvent = new EmailEvent(
                         s.getEmail(),
                         "New Post Published",
                         "Check new post: http://localhost:8080/posts/" + postId
-                )
-        );
+                );
+                rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.EMAIL_SEND, emailEvent);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     // 6. UPDATE PREFS

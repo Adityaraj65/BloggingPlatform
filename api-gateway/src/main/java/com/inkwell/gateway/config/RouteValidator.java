@@ -18,6 +18,15 @@ public class RouteValidator {
             "/auth/register",
             "/auth/login",
             "/auth/refresh",
+            "/auth/oauth/complete-onboarding",
+            "/auth/verify-email",
+            "/auth/resend-verification",
+            "/auth/forgot-password",
+            "/auth/reset-password",
+
+            // OAuth2 endpoints
+            "/oauth2/authorization/",
+            "/login/oauth2/code/",
 
             // EUREKA
             "/eureka",
@@ -42,6 +51,7 @@ public class RouteValidator {
             // NEWSLETTER
             "/newsletter/subscribe",
             "/newsletter/confirm",
+            "/newsletter/unsubscribe",
 
             // MEDIA PUBLIC FILES
             "/media/files/"

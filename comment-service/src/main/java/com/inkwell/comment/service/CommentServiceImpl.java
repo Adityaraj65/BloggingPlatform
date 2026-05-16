@@ -102,29 +102,33 @@ public class CommentServiceImpl implements CommentService {
 
         event.setRelatedType("COMMENT");
 
-        if (dto.getParentCommentId() != null) {
+        try {
+            if (dto.getParentCommentId() != null) {
 
-            rabbitTemplate.convertAndSend(
-                    "inkwell.events",
-                    "comment.reply",
-                    event
-            );
+                rabbitTemplate.convertAndSend(
+                        "inkwell.events",
+                        "comment.reply",
+                        event
+                );
 
-            System.out.println(
-                    "COMMENT REPLY EVENT SENT"
-            );
+                System.out.println(
+                        "COMMENT REPLY EVENT SENT"
+                );
 
-        } else {
+            } else {
 
-            rabbitTemplate.convertAndSend(
-                    "inkwell.events",
-                    "comment.created",
-                    event
-            );
+                rabbitTemplate.convertAndSend(
+                        "inkwell.events",
+                        "comment.created",
+                        event
+                );
 
-            System.out.println(
-                    "COMMENT EVENT SENT"
-            );
+                System.out.println(
+                        "COMMENT EVENT SENT"
+                );
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         return map(savedComment);

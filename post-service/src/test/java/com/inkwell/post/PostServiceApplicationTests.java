@@ -1,13 +1,15 @@
 package com.inkwell.post;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
 class PostServiceApplicationTests {
 
 	@Test
-	void contextLoads() {
+	void applicationClassIsSpringBootApplication() {
+		assertThat(PostServiceApplication.class).hasAnnotation(SpringBootApplication.class);
 	}
 
 }

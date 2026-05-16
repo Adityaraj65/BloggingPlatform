@@ -17,9 +17,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
+    private final OAuth2SuccessHandler oauth2SuccessHandler;
 
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
+    public SecurityConfig(JwtAuthFilter jwtAuthFilter, OAuth2SuccessHandler oauth2SuccessHandler) {
         this.jwtAuthFilter = jwtAuthFilter;
+        this.oauth2SuccessHandler = oauth2SuccessHandler;
     }
 
     @Bean
@@ -38,11 +40,24 @@ public class SecurityConfig {
                     .requestMatchers(
                             "/auth/register",
                             "/auth/login",
-                            "/auth/refresh"
+                            "/auth/refresh",
+                            "/auth/oauth/complete-onboarding",
+                            "/auth/verify-email",
+                            "/auth/resend-verification",
+                            "/auth/forgot-password",
+                            "/auth/reset-password"
                     ).permitAll()
+                    
+                    // OAuth2 endpoints must be public
+                    .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
 
                     // EVERYTHING ELSE
                     .anyRequest().authenticated()
+            )
+            
+            // Enable OAuth2 login with custom success handler
+            .oauth2Login(oauth2 -> oauth2
+                    .successHandler(oauth2SuccessHandler)
             )
 
             .addFilterBefore(jwtAuthFilter,

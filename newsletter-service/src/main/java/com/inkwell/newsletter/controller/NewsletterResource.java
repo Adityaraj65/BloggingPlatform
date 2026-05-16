@@ -40,6 +40,13 @@ public class NewsletterResource {
         return ResponseEntity.ok(service.confirmSubscription(token));
     }
 
+    // PUBLIC
+    @GetMapping("/unsubscribe")
+    public ResponseEntity<String> unsubscribe(@RequestParam String token) {
+        service.unsubscribe(token);
+        return ResponseEntity.ok("Successfully unsubscribed.");
+    }
+
     // ADMIN ONLY
 //    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/send")

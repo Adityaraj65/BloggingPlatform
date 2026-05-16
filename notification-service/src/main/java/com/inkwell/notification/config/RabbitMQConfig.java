@@ -22,6 +22,9 @@ public class RabbitMQConfig {
     public static final String NEWSLETTER_QUEUE =
             "newsletter.queue";
 
+    public static final String EMAIL_QUEUE =
+            "email.queue";
+
     // ================= ROUTING KEYS =================
 
     public static final String POST_PUBLISHED =
@@ -33,12 +36,20 @@ public class RabbitMQConfig {
     public static final String COMMENT_REPLY =
             "comment.reply";
 
+    public static final String EMAIL_SEND =
+            "email.send";
+
     // ================= JSON CONVERTER =================
 
     @Bean
-    public MessageConverter jsonMessageConverter() {
+    public MessageConverter jsonMessageConverter(com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
 
-        return new Jackson2JsonMessageConverter();
+        Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter(objectMapper);
+        org.springframework.amqp.support.converter.DefaultJackson2JavaTypeMapper typeMapper = new org.springframework.amqp.support.converter.DefaultJackson2JavaTypeMapper();
+        typeMapper.setTrustedPackages("*");
+        typeMapper.setTypePrecedence(org.springframework.amqp.support.converter.Jackson2JavaTypeMapper.TypePrecedence.INFERRED);
+        converter.setJavaTypeMapper(typeMapper);
+        return converter;
     }
 
     // ================= EXCHANGE =================
@@ -63,6 +74,12 @@ public class RabbitMQConfig {
         return new Queue(NEWSLETTER_QUEUE);
     }
 
+    @Bean
+    Queue emailQueue() {
+
+        return new Queue(EMAIL_QUEUE);
+    }
+
     // ================= BINDINGS =================
 
     @Bean
@@ -77,17 +94,7 @@ public class RabbitMQConfig {
                 .with(POST_PUBLISHED);
     }
 
-    @Bean
-    Binding notificationPostBinding(
-            Queue notificationQueue,
-            TopicExchange exchange
-    ) {
 
-        return BindingBuilder
-                .bind(notificationQueue)
-                .to(exchange)
-                .with(POST_PUBLISHED);
-    }
 
     @Bean
     Binding commentCreatedBinding(
@@ -111,5 +118,17 @@ public class RabbitMQConfig {
                 .bind(notificationQueue)
                 .to(exchange)
                 .with(COMMENT_REPLY);
+    }
+
+    @Bean
+    Binding emailBinding(
+            Queue emailQueue,
+            TopicExchange exchange
+    ) {
+
+        return BindingBuilder
+                .bind(emailQueue)
+                .to(exchange)
+                .with(EMAIL_SEND);
     }
 }

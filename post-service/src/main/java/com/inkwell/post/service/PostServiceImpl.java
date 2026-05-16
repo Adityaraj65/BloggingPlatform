@@ -12,6 +12,8 @@ import com.inkwell.post.dto.PostResponseDTO;
 import com.inkwell.post.entity.Post;
 import com.inkwell.post.repository.PostRepository;
 
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+
 import jakarta.servlet.http.HttpServletRequest;
 
 @Service
@@ -20,15 +22,18 @@ public class PostServiceImpl implements PostService {
     private final PostRepository repo;
     private final CategoryClient categoryClient;
     private final HttpServletRequest request;
+    private final RabbitTemplate rabbitTemplate;
 
     public PostServiceImpl(
             PostRepository repo,
             CategoryClient categoryClient,
-            HttpServletRequest request
+            HttpServletRequest request,
+            RabbitTemplate rabbitTemplate
     ) {
         this.repo = repo;
         this.categoryClient = categoryClient;
         this.request = request;
+        this.rabbitTemplate = rabbitTemplate;
     }
 
     // ================= CREATE POST =================
@@ -154,7 +159,13 @@ public class PostServiceImpl implements PostService {
 
         post.setUpdatedAt(LocalDateTime.now());
 
-        return map(repo.save(post));
+        Post savedPost = repo.save(post);
+
+        if (publish) {
+            publishPostEvent(savedPost);
+        }
+
+        return map(savedPost);
     }
     // ================= GET POST =================
 
@@ -291,7 +302,9 @@ public class PostServiceImpl implements PostService {
 
         post.setPublishedAt(LocalDateTime.now());
 
-        repo.save(post);
+        Post savedPost = repo.save(post);
+        
+        publishPostEvent(savedPost);
     }
 
     // ================= UNPUBLISH =================
@@ -462,6 +475,27 @@ public class PostServiceImpl implements PostService {
             return Long.parseLong(userId);
         } catch (NumberFormatException e) {
             return null;
+        }
+    }
+
+    private void publishPostEvent(Post post) {
+        try {
+            com.inkwell.post.dto.PostPublishedEvent event = new com.inkwell.post.dto.PostPublishedEvent(
+                    post.getPostId(),
+                    post.getAuthorId(),
+                    post.getAuthorName(),
+                    post.getTitle(),
+                    post.getSlug(),
+                    post.getPublishedAt()
+            );
+            rabbitTemplate.convertAndSend(
+                    com.inkwell.post.config.RabbitMQConfig.EXCHANGE,
+                    com.inkwell.post.config.RabbitMQConfig.POST_PUBLISHED,
+                    event
+            );
+        } catch (Exception e) {
+            // Ignore failure, event publishing must not break post creation
+            e.printStackTrace();
         }
     }
 }

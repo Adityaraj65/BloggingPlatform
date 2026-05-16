@@ -11,6 +11,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByEmail(String email);
 
+    Optional<User> findByUsernameOrEmail(String username, String email);
+
     Optional<User> findByUserId(Long id);
 
     boolean existsByEmail(String email);
@@ -18,4 +20,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByUsername(String username);
 
     List<User> findByUsernameContainingIgnoreCase(String query);
+
+    Optional<User> findByVerificationToken(String verificationToken);
+
+    Optional<User> findByResetToken(String resetToken);
 }
