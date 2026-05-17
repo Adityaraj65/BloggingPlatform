@@ -36,7 +36,7 @@ build/
 .settings/
 .vscode/
 *.sublime-workspace
-
+cp.txt
 # Operating System Files
 .DS_Store
 Thumbs.db
@@ -45,6 +45,7 @@ Thumbs.db
 .env
 .env.local
 bin/
+docker-compose.yml
 
 # AWS S3 / Cloud Security (Specific to InkWell)
 # Agar aap credentials file me rakhte hain toh use ignore karein
